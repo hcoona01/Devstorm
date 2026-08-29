@@ -49,7 +49,7 @@ export default async function handler(req: any, res: any) {
         'gemini-3-flash-preview',
       ];
 
-      const prompt = `You are an expert HR AI Career Advisor and Resume Analyst.
+      const prompt = `You are an Enterprise ATS (Applicant Tracking System) Evaluation Engine (built according to Taleo, Jobscan, and Greenhouse ATS parsing standards).
 Analyze the following target Job Description against the Candidate's Resume / Profile.
 
 TARGET JOB DESCRIPTION:
@@ -63,26 +63,39 @@ ${resumeText || 'Highly skilled candidate with background in AI/ML, PyTorch, Ten
 """
 
 Instructions:
-1. Conduct a deep, realistic evaluation comparing candidate skills against "${jdText}".
-2. Evaluate domain transferability (e.g. AI/ML applied to Cybersecurity, Automation, or Software Systems).
-3. Do NOT claim input fields are empty or return 0% due to missing fields. Calculate a fair, realistic match score (0-100).
-4. Recommend active open-source GitHub repositories.
+1. Conduct a strict Enterprise ATS match evaluation calculating a composite match score (0-100%) based on:
+   - Hard Skills & Tech Keyword Match (40% weight)
+   - Experience & Seniority Alignment (20% weight)
+   - Soft Skills & Leadership (20% weight)
+   - Education & Credentials (10% weight)
+   - Formatting & Action-Verb Impact (10% weight)
+2. Extract exact MATCHED keywords and MISSING critical keywords.
+3. Calculate sub-scores (0-100) for each of the 5 criteria.
+4. Recommend active open-source GitHub repositories for skill enhancement.
 
 Return your response ONLY as a valid JSON object with EXACTLY this structure:
 {
-  "match_score": 75,
-  "missing_keywords": ["Skill1", "Skill2", "Skill3"],
+  "match_score": 78,
+  "ats_breakdown": {
+    "hard_skills_score": 80,
+    "experience_level_score": 75,
+    "soft_skills_score": 85,
+    "education_cert_score": 70,
+    "format_impact_score": 80
+  },
+  "matched_keywords": ["MatchedSkill1", "MatchedSkill2"],
+  "missing_keywords": ["MissingSkill1", "MissingSkill2"],
   "scraped_insights": [
-    "Insight statement 1...",
-    "Insight statement 2...",
-    "Insight statement 3..."
+    "ATS Analysis Insight 1...",
+    "ATS Analysis Insight 2...",
+    "ATS Analysis Insight 3..."
   ],
   "improvement_points": [
     {
-      "category": "Category Name",
-      "suggestion": "Clear suggestion for ${jdText}...",
-      "original_text": "Original bullet...",
-      "improved_text": "Improved high-impact bullet with metrics..."
+      "category": "ATS Category",
+      "suggestion": "Clear ATS optimization suggestion for ${jdText}...",
+      "original_text": "Original resume bullet...",
+      "improved_text": "ATS-friendly bullet with action verb and metrics..."
     }
   ],
   "action_plan": [
@@ -130,6 +143,14 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
 
     return res.status(200).json({
       match_score: Math.min(95, Math.max(55, 65 + extractedTech.length * 5)),
+      ats_breakdown: {
+        hard_skills_score: 75,
+        experience_level_score": 70,
+        soft_skills_score: 80,
+        education_cert_score: 70,
+        format_impact_score: 75,
+      },
+      matched_keywords: ['Python', 'System Design'],
       missing_keywords: missingKeywords,
       scraped_insights: [
         `Extracted target requirements from provided JD snippet (${jdText.slice(0, 45)}...).`,
