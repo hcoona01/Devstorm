@@ -4,14 +4,16 @@ export function useTypewriter(
   text: string,
   speed = 38,
   startDelay = 600,
+  pauseDuration = 6000,
 ) {
   const [displayed, setDisplayed] = useState('')
   const [done, setDone] = useState(false)
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
 
-    const timeoutId = setTimeout(() => {
+    const typeText = () => {
       setDisplayed('')
       setDone(false)
       let i = 0
@@ -21,15 +23,18 @@ export function useTypewriter(
         if (i >= text.length) {
           clearInterval(intervalId)
           setDone(true)
+          timeoutId = setTimeout(typeText, pauseDuration)
         }
       }, speed)
-    }, startDelay)
+    }
+
+    timeoutId = setTimeout(typeText, startDelay)
 
     return () => {
-      clearTimeout(timeoutId)
+      if (timeoutId) clearTimeout(timeoutId)
       if (intervalId) clearInterval(intervalId)
     }
-  }, [text, speed, startDelay])
+  }, [text, speed, startDelay, pauseDuration])
 
   return { displayed, done }
 }

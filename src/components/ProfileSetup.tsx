@@ -291,15 +291,17 @@ export default function ProfileSetup() {
       setLoading(true)
       setError('')
       const token = await currentUser.getIdToken()
-      await submitProfile(token, buildPayload())
+      const payload = buildPayload()
       await update(ref(db, `users/${currentUser.uid}`), {
         displayName: fullName.trim(),
         profileComplete: true,
+        profileData: JSON.parse(JSON.stringify(payload)),
       })
+      await submitProfile(token, payload)
       completeProfileSetup()
     } catch (err) {
       const text =
-        err instanceof Error ? err.message : 'Could not submit profile. Is the profile API running?'
+        err instanceof Error ? err.message : 'Could not submit profile.'
       setError(text)
     } finally {
       setLoading(false)

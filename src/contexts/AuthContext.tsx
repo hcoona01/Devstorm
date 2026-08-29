@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   type User
 } from 'firebase/auth';
-import { ref, set, onValue, type Unsubscribe } from 'firebase/database';
+import { ref, set, update, onValue, type Unsubscribe } from 'firebase/database';
 import { auth, db } from '../firebase';
 import { 
   AuthContext, 
@@ -44,7 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     await set(ref(db, 'users/' + user.uid), newProfile);
     setUserProfile(newProfile);
-    setPendingProfileSetup(true);
 
     return userCredential;
   }
@@ -57,11 +56,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function logout() {
     setPendingProfileSetup(false);
     setUserProfile(null);
-    return signOut(auth);
+    await signOut(auth);
+    window.location.assign('/');
+  }
+
+  async function updateProfileData(data: Partial<UserProfile>) {
+    if (!auth.currentUser) return;
+    const userRef = ref(db, 'users/' + auth.currentUser.uid);
+    const sanitized = JSON.parse(JSON.stringify(data));
+    await update(userRef, sanitized);
+    setUserProfile((prev) => (prev ? { ...prev, ...data } : (data as UserProfile)));
   }
 
   function completeProfileSetup() {
     setPendingProfileSetup(false);
+  }
+
+  function startProfileSetup() {
+    setPendingProfileSetup(true);
   }
 
   useEffect(() => {
@@ -104,9 +116,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     pendingProfileSetup,
     completeProfileSetup,
+    startProfileSetup,
     signup,
     login,
     logout,
+    updateProfileData,
     authModalOpen,
     authModalMode,
     openAuthModal,

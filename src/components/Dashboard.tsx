@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/useAuth';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { ProjectItem } from '../contexts/authContextInstance';
 
 export default function Dashboard() {
   const { currentUser, userProfile, logout, updateProfileData } = useAuth();
-  const navigate = useNavigate();
+
 
   const [isEditing, setIsEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);

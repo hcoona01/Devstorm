@@ -12,7 +12,11 @@ dist
 dist-ssr
 *.local
 .env
-.env*.local
+.env.*
+!.env.example
+
+# Vercel
+.vercel
 
 # Python
 .venv/
@@ -31,3 +35,5 @@ __pycache__/
 *.sln
 *.sw?
 
+
+.vercel

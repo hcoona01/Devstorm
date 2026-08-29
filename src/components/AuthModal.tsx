@@ -22,7 +22,8 @@ export default function AuthModal({
     authModalMode, 
     closeAuthModal, 
     login, 
-    signup 
+    signup,
+    startProfileSetup,
   } = useAuth();
 
   const isVisible = isOpen !== undefined ? isOpen : authModalOpen;
@@ -115,6 +116,9 @@ export default function AuthModal({
         await login(email, password);
       }
       triggerClose();
+      if (mode === 'signup') {
+        window.setTimeout(startProfileSetup, ANIMATION_DURATION);
+      }
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
       console.error('Auth error:', err);

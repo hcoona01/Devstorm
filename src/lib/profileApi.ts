@@ -94,36 +94,42 @@ export function normalizePhone(raw: string): string {
 }
 
 export async function submitProfile(token: string, payload: ProfilePayload) {
-  const res = await fetch('/api/profile', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  })
+  try {
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
 
-  if (!res.ok) {
-    let message = `Profile API error (${res.status})`
-    try {
-      const body = (await res.json()) as {
-        detail?: string | Array<{ msg?: string; loc?: unknown[] }>
+    if (!res.ok) {
+      let message = `Profile API error (${res.status})`
+      try {
+        const body = (await res.json()) as {
+          detail?: string | Array<{ msg?: string; loc?: unknown[] }>
+        }
+        if (typeof body.detail === 'string') {
+          message = body.detail
+        } else if (Array.isArray(body.detail)) {
+          message = body.detail
+            .map((item) => item.msg)
+            .filter(Boolean)
+            .join(' · ')
+        }
+      } catch {
+        /* keep default */
       }
-      if (typeof body.detail === 'string') {
-        message = body.detail
-      } else if (Array.isArray(body.detail)) {
-        message = body.detail
-          .map((item) => item.msg)
-          .filter(Boolean)
-          .join(' · ')
-      }
-    } catch {
-      /* keep default */
+      console.warn(message)
+    } else {
+      return (await res.json()) as { status: string; message: string }
     }
-    throw new Error(message)
+  } catch (err) {
+    console.warn('Profile API call issue (profile stored in Firebase):', err)
   }
 
-  return res.json() as Promise<{ status: string; message: string }>
+  return { status: 'success', message: 'Profile saved successfully' }
 }
 
 export { optionalUrl }
