@@ -9,12 +9,11 @@ const VIDEO_SRC =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_041744_63efcd78-bf7d-4039-99e2-2461e8a61903.mp4'
 const SENSITIVITY = 0.8
 const EMAIL = 'stackalign@gmail.com'
-const NAV_LINKS = ['Live HR Agent', 'AI Resume Builder (ATS)', 'Scheduler', 'Project Finder'] as const
+const NAV_LINKS = ['Live HR Agent', 'AI Resume Builder and Project Finder', 'ATS Checker'] as const
 const PILL_LABELS = [
   'Live HR Agent',
-  'AI Resume Builder (ATS)',
-  'Scheduler',
-  'Project Finder',
+  'AI Resume Builder and Project Finder',
+  'ATS Checker',
 ] as const
 const TYPEWRITER_TEXT =
   `We are building a platform to help you find the
@@ -420,7 +419,7 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
           </p>
 
           {/* Typewriter Mission Statement */}
-          <p className="mb-6 sm:mb-8 text-white whitespace-pre-line text-[17px] leading-snug sm:text-[22px] md:text-[26px] lg:text-[28px] font-normal min-h-[50px] sm:min-h-[64px]">
+          <p className="mb-6 sm:mb-8 text-white whitespace-pre-line text-[17px] leading-snug sm:text-[22px] md:text-[26px] lg:text-[28px] font-normal min-h-[2.8em]">
             {displayed}
             {!done && (
               <span className="cursor-blink ml-1 inline-block h-[1.1em] w-[2px] align-middle bg-white" />
