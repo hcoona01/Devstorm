@@ -71,7 +71,7 @@ Instructions:
    - ATS Formatting, Action Verbs, and Readability (10% weight)
 3. Extract ALL matched core keywords directly from the candidate's CV/Resume.
 4. Identify 3-5 critical missing keywords or advanced tools that would elevate this CV for top-tier roles.
-5. Provide specific CV bullet-point improvements and targeted open-source GitHub project recommendations.`;
+5. Provide specific CV bullet-point improvements and targeted open-source GitHub project recommendations.
 
 Return your response ONLY as a valid JSON object with EXACTLY this structure:
 {
