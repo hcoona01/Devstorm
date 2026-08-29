@@ -19,20 +19,27 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const bodyText = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
-    let jdText = 'Software Engineer';
+    let jdText = 'General Career & Technical Role';
     let resumeText = '';
 
-    const jdMatch = bodyText.match(/name="job_description"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || bodyText.match(/name="job_description"\r\n\r\n([\s\S]*?)\r\n--/) || bodyText.match(/"job_description"\s*:\s*"([^"]+)"/);
-    if (jdMatch && jdMatch[1].trim()) {
-      jdText = jdMatch[1].trim();
-    } else if (bodyText.trim() && !bodyText.includes('------WebKitFormBoundary')) {
-      jdText = bodyText.trim();
-    }
+    if (req.body) {
+      if (typeof req.body === 'object') {
+        if (req.body.resume_text) resumeText = String(req.body.resume_text).trim();
+        if (req.body.job_description) jdText = String(req.body.job_description).trim();
+      } else if (typeof req.body === 'string') {
+        try {
+          const parsed = JSON.parse(req.body);
+          if (parsed.resume_text) resumeText = String(parsed.resume_text).trim();
+          if (parsed.job_description) jdText = String(parsed.job_description).trim();
+        } catch {
+          const bodyText = req.body;
+          const jdMatch = bodyText.match(/"job_description"\s*:\s*"([^"]+)"/) || bodyText.match(/name="job_description"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i);
+          if (jdMatch && jdMatch[1].trim()) jdText = jdMatch[1].trim();
 
-    const resumeMatch = bodyText.match(/name="resume_text"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || bodyText.match(/name="resume";\s*filename="[^"]*"[\r\n]+Content-Type:[^\r\n]+[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || bodyText.match(/"resume_text"\s*:\s*"([^"]+)"/);
-    if (resumeMatch && resumeMatch[1].trim()) {
-      resumeText = resumeMatch[1].trim();
+          const resumeMatch = bodyText.match(/"resume_text"\s*:\s*"([^"]+)"/) || bodyText.match(/name="resume_text"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i);
+          if (resumeMatch && resumeMatch[1].trim()) resumeText = resumeMatch[1].trim();
+        }
+      }
     }
 
     const fallbackKey = typeof Buffer !== 'undefined'

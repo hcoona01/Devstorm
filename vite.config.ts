@@ -220,26 +220,21 @@ const devApiMockPlugin = (): Plugin => ({
           body += chunk
         })
         req.on('end', async () => {
-          let jdText = 'Software Engineer'
+          let jdText = 'General Career & Technical Role'
           let resumeText = ''
 
-          const jdMatch = body.match(/name="job_description"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || body.match(/name="job_description"\r\n\r\n([\s\S]*?)\r\n--/)
-          if (jdMatch && jdMatch[1].trim()) {
-            jdText = jdMatch[1].trim()
-          } else {
+          if (body && body.trim()) {
             try {
-              const parsedJson = JSON.parse(body)
-              if (parsedJson.job_description) jdText = parsedJson.job_description
+              const parsed = JSON.parse(body)
+              if (parsed.resume_text) resumeText = String(parsed.resume_text).trim()
+              if (parsed.job_description) jdText = String(parsed.job_description).trim()
             } catch {
-              if (body.trim() && !body.includes('------WebKitFormBoundary')) {
-                jdText = body.trim()
-              }
-            }
-          }
+              const jdMatch = body.match(/"job_description"\s*:\s*"([^"]+)"/) || body.match(/name="job_description"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i)
+              if (jdMatch && jdMatch[1].trim()) jdText = jdMatch[1].trim()
 
-          const resumeMatch = body.match(/name="resume_text"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || body.match(/name="resume";\s*filename="[^"]*"[\r\n]+Content-Type:[^\r\n]+[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i)
-          if (resumeMatch && resumeMatch[1].trim()) {
-            resumeText = resumeMatch[1].trim()
+              const resumeMatch = body.match(/"resume_text"\s*:\s*"([^"]+)"/) || body.match(/name="resume_text"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i)
+              if (resumeMatch && resumeMatch[1].trim()) resumeText = resumeMatch[1].trim()
+            }
           }
 
           const fallbackKey = typeof Buffer !== 'undefined'

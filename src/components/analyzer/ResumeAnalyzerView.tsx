@@ -67,16 +67,15 @@ export default function ResumeAnalyzerView() {
     setLoading(true);
 
     try {
-      const payload = new FormData();
-      payload.append('job_description', jobDescription.trim() || 'General Career & Technical Role');
-      if (resumeFile) {
-        payload.append('resume', resumeFile);
-      }
-      payload.append('resume_text', finalResumeContent || `Candidate Resume File: ${resumeFile?.name || 'Uploaded CV'}`);
-
       const response = await fetch('/api/analyze-cv', {
         method: 'POST',
-        body: payload,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          job_description: jobDescription.trim() || 'General Career & Technical Role',
+          resume_text: finalResumeContent,
+        }),
       });
 
       if (!response.ok) {
