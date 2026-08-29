@@ -1,4 +1,5 @@
 declare const process: any;
+declare const Buffer: any;
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
