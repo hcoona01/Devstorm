@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard.tsx'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
 import ProfileSetup from './components/ProfileSetup.tsx'
+import AnalyzerTool from './components/analyzer/AnalyzerTool.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -22,6 +23,14 @@ createRoot(document.getElementById('root')!).render(
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analyzer"
+            element={
+              <ProtectedRoute>
+                <AnalyzerTool />
               </ProtectedRoute>
             }
           />

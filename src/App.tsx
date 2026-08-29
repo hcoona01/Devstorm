@@ -13,7 +13,7 @@ const NAV_LINKS = ['Live HR Agent', 'AI Resume Builder and Project Finder', 'ATS
 const PILL_LABELS = [
   'Live HR Agent',
   'AI Resume Builder and Project Finder',
-  'ATS Checker',
+  'ATS Checker', 
 ] as const
 const TYPEWRITER_TEXT =
   `We are building a platform to help you find the
@@ -193,7 +193,7 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
 
   const handleActionClick = () => {
     if (currentUser) {
-      navigate('/dashboard')
+      navigate('/analyzer')
     } else {
       openAuthModal('signup')
     }

@@ -97,3 +97,23 @@ class AnalyzerResponse(BaseModel):
     missing_keywords: List[str]
     scraped_insights: List[str]
     improvement_points: List[ImprovementPoint]
+
+class JobMatchesRequest(BaseModel):
+    domain_interest: str
+    skills: List[str] = []
+    preferred_locations: List[str] = []
+
+class JobMatchItem(BaseModel):
+    job_title: str
+    company_name: str
+    location: str
+    linkedin_job_url: Optional[str] = None
+    match_score: int
+    match_reason: str
+    missing_skills: List[str]
+
+class JobMatchesResponse(BaseModel):
+    student_domain: str
+    total_jobs_analyzed: int
+    matches: List[JobMatchItem]
+

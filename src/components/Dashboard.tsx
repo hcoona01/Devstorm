@@ -185,10 +185,10 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
-              to="/setup"
-              className="hidden sm:flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-3.5 py-1 text-xs font-semibold text-[#0a66c2] hover:bg-blue-100 transition"
+              to="/analyzer"
+              className="flex items-center gap-1 rounded-full bg-[#0a66c2] text-white px-3.5 py-1 text-xs font-semibold hover:bg-[#004182] transition shadow-sm"
             >
-              ★ Guided Setup
+              ⚡ AI Resume & Project Finder
             </Link>
 
             <button
@@ -226,6 +226,25 @@ export default function Dashboard() {
 
       {/* Main Container */}
       <main className="mx-auto max-w-5xl px-4 pt-6 space-y-4">
+        
+        {/* Quick Launch Tool Banner */}
+        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-[#0a66c2] px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">New Tool</span>
+              <h2 className="text-sm font-bold text-neutral-900">AI Resume Builder & Project Finder</h2>
+            </div>
+            <p className="text-xs text-neutral-600">
+              Run AI keyword gap-analysis on your resume, track drag-and-drop learning roadmaps, and match with live jobs.
+            </p>
+          </div>
+          <Link
+            to="/analyzer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0a66c2] px-4 py-2 text-xs font-semibold text-white hover:bg-[#004182] transition shadow-sm shrink-0"
+          >
+            <span>Launch Tool ↗</span>
+          </Link>
+        </div>
         
         {/* 1. MAIN PROFILE CARD */}
         <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
