@@ -163,7 +163,18 @@ export default function AuthModal({
         <div className="pointer-events-none absolute -top-24 -left-24 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -right-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
 
-        {/* Close Button */}
+        {/* Top Header Buttons: Home & Close */}
+        <button
+          type="button"
+          onClick={() => {
+            triggerClose();
+            window.location.href = '/';
+          }}
+          className="absolute top-4 left-4 sm:top-5 sm:left-5 inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-neutral-300 transition-colors hover:border-white/60 hover:bg-white/10 hover:text-white cursor-pointer"
+        >
+          <span>←</span> Home
+        </button>
+
         <button
           type="button"
           onClick={triggerClose}

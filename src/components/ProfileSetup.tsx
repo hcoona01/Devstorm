@@ -337,9 +337,20 @@ export default function ProfileSetup() {
         <div className="relative z-10 flex h-full items-center justify-center px-4 py-6 sm:px-8">
           <div className="flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_20px_80px_rgba(0,0,0,0.12)] backdrop-blur-md">
             <FadeIn show={contentIn} delay={0} className="border-b border-neutral-200/80 px-6 py-5 sm:px-8">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                Step {step + 1} of {STEPS.length}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+                  Step {step + 1} of {STEPS.length}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = '/'
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white/90 px-3 py-1 text-xs font-medium text-neutral-700 transition hover:bg-neutral-900 hover:text-white cursor-pointer shadow-sm"
+                >
+                  <span>←</span> Home
+                </button>
+              </div>
               <h2 className="mt-1 text-2xl font-medium tracking-tight text-neutral-900 sm:text-3xl">
                 Finish your profile
               </h2>
@@ -571,17 +582,28 @@ export default function ProfileSetup() {
             </div>
 
             <FadeIn show={contentIn} delay={120} className="flex items-center justify-between gap-3 border-t border-neutral-200/80 px-6 py-4 sm:px-8">
-              <button
-                type="button"
-                disabled={step === 0 || loading}
-                onClick={() => {
-                  setError('')
-                  setStep((value) => Math.max(0, value - 1))
-                }}
-                className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-40"
-              >
-                Back
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = '/'
+                  }}
+                  className="rounded-full border border-neutral-300 bg-white px-3.5 py-2 text-xs sm:text-sm font-medium text-neutral-700 transition hover:bg-neutral-900 hover:text-white cursor-pointer"
+                >
+                  ← Home
+                </button>
+                <button
+                  type="button"
+                  disabled={step === 0 || loading}
+                  onClick={() => {
+                    setError('')
+                    setStep((value) => Math.max(0, value - 1))
+                  }}
+                  className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-xs sm:text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-40 cursor-pointer"
+                >
+                  Back
+                </button>
+              </div>
               {step < STEPS.length - 1 ? (
                 <button
                   type="button"

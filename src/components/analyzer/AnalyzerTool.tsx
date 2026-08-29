@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ResumeAnalyzerView from './ResumeAnalyzerView';
 import JobMatchesView from './JobMatchesView';
 import './AnalyzerTool.css';
@@ -34,21 +34,30 @@ function useRevealObserver() {
 
 export default function AnalyzerTool() {
   const [activeTab, setActiveTab] = useState<'resume' | 'jobs'>('resume');
+  const [pageVisible, setPageVisible] = useState(false);
+  const navigate = useNavigate();
 
-  // Hero reveal on load via requestAnimationFrame
+  // Hero reveal & page fade-in on mount
   useEffect(() => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
-
-    requestAnimationFrame(() => {
+    const anim = requestAnimationFrame(() => {
+      setPageVisible(true);
       document.querySelectorAll('.lab-hero-reveal').forEach((el) => {
         el.classList.add('visible');
       });
     });
+    return () => cancelAnimationFrame(anim);
   }, []);
 
   // Reveal observer for content sections
   useRevealObserver();
+
+  const handleGoHome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setPageVisible(false);
+    setTimeout(() => {
+      navigate('/');
+    }, 450);
+  };
 
   const scrollToContent = () => {
     const el = document.getElementById('lab-tool-content');
@@ -56,11 +65,11 @@ export default function AnalyzerTool() {
   };
 
   return (
-    <div className="lab-page">
+    <div className={`lab-page transition-all duration-500 ease-out ${pageVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
       {/* ── Minimal Back Link (no full navbar) ─────────────── */}
-      <Link to="/" className="lab-back">
+      <a href="/" onClick={handleGoHome} className="lab-back cursor-pointer">
         ← Home
-      </Link>
+      </a>
 
       {/* ── Opening Statement (Hero) ───────────────────────── */}
       <section className="lab-hero">

@@ -220,27 +220,51 @@ const devApiMockPlugin = (): Plugin => ({
           body += chunk
         })
         req.on('end', async () => {
-          const jdMatch = body.match(/name="job_description"\r\n\r\n([\s\S]*?)\r\n--/)
-          const jdText = jdMatch ? jdMatch[1].trim() : body
+          let jdText = 'Software Engineer'
+          const jdMatch = body.match(/name="job_description"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || body.match(/name="job_description"\r\n\r\n([\s\S]*?)\r\n--/)
+          if (jdMatch && jdMatch[1].trim()) {
+            jdText = jdMatch[1].trim()
+          } else {
+            try {
+              const parsedJson = JSON.parse(body)
+              if (parsedJson.job_description) jdText = parsedJson.job_description
+            } catch {
+              if (body.trim() && !body.includes('------WebKitFormBoundary')) {
+                jdText = body.trim()
+              }
+            }
+          }
 
           const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY
 
           if (geminiApiKey) {
-            try {
-              const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`
-              const prompt = `You are an expert HR AI Career Advisor and Resume Analyst.
-Analyze the following Job Description against the candidate's target profile.
+            const candidateModels = [
+              'gemini-3.1-flash-lite',
+              'gemini-3.5-flash-lite',
+              'gemini-3.6-flash',
+              'gemini-3.7-flash',
+              'gemini-3-flash-preview',
+            ]
 
-JOB DESCRIPTION:
+            const prompt = `You are an expert HR AI Career Advisor and Resume Analyst.
+Analyze the following target Job Description against the candidate's profile.
+
+TARGET JOB DESCRIPTION:
 """
 ${jdText}
 """
 
-Perform a comprehensive, professional analysis.
+Instructions:
+1. Conduct a deep, highly realistic analysis specifically tailored to "${jdText}".
+2. Identify core industry skills and tools relevant to "${jdText}".
+3. Do NOT return generic fallback templates.
+4. Calculate a realistic match score (0-100) based on typical requirements for "${jdText}".
+5. Recommend active open-source GitHub repositories (e.g. "splunk/attack_data", "nmap/nmap", "rapid7/metasploit-framework") relevant to "${jdText}".
+
 Return your response ONLY as a valid JSON object with EXACTLY this structure:
 {
-  "match_score": 82,
-  "missing_keywords": ["Keyword1", "Keyword2", "Keyword3"],
+  "match_score": 75,
+  "missing_keywords": ["Skill1", "Skill2", "Skill3"],
   "scraped_insights": [
     "Insight statement 1...",
     "Insight statement 2...",
@@ -249,9 +273,9 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
   "improvement_points": [
     {
       "category": "Category Name",
-      "suggestion": "Clear suggestion...",
+      "suggestion": "Clear suggestion for ${jdText}...",
       "original_text": "Original bullet...",
-      "improved_text": "Improved bullet..."
+      "improved_text": "Improved high-impact bullet with metrics..."
     }
   ],
   "action_plan": [
@@ -266,42 +290,46 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
   ]
 }`
 
-              const geminiRes = await fetch(geminiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [{ parts: [{ text: prompt }] }],
-                  generationConfig: { responseMimeType: 'application/json' },
-                }),
-              })
+            for (const modelName of candidateModels) {
+              try {
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`
+                const geminiRes = await fetch(geminiUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: 'application/json' },
+                  }),
+                })
 
-              if (geminiRes.ok) {
-                const geminiData: any = await geminiRes.json()
-                const rawJsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
-                if (rawJsonText) {
-                  const parsedAnalysis = JSON.parse(rawJsonText)
-                  res.setHeader('Content-Type', 'application/json')
-                  res.statusCode = 200
-                  res.end(JSON.stringify(parsedAnalysis))
-                  return
+                if (geminiRes.ok) {
+                  const geminiData: any = await geminiRes.json()
+                  const rawJsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
+                  if (rawJsonText) {
+                    const parsedAnalysis = JSON.parse(rawJsonText)
+                    res.setHeader('Content-Type', 'application/json')
+                    res.statusCode = 200
+                    res.end(JSON.stringify(parsedAnalysis))
+                    return
+                  }
                 }
+              } catch (geminiErr) {
+                console.warn(`Gemini analysis notice for ${modelName}:`, geminiErr)
               }
-            } catch (geminiErr) {
-              console.warn('Gemini analysis notice:', geminiErr)
             }
           }
 
           // Fallback if Gemini request is unavailable
-          const extractedTech = ['Docker', 'GraphQL', 'Kubernetes', 'FastAPI', 'TypeScript', 'TailwindCSS', 'Redis', 'Python', 'React', 'Figma']
+          const extractedTech = ['Docker', 'GraphQL', 'Kubernetes', 'FastAPI', 'TypeScript', 'TailwindCSS', 'Redis', 'Python', 'React', 'Figma', 'SIEM', 'Cybersecurity']
             .filter((t) => jdText.toLowerCase().includes(t.toLowerCase()))
 
-          const missingKeywords = extractedTech.length > 0 ? extractedTech.slice(0, 3) : ['Docker', 'GraphQL', 'CI/CD Pipelines']
+          const missingKeywords = extractedTech.length > 0 ? extractedTech.slice(0, 3) : ['SIEM Monitoring', 'Incident Response', 'Network Forensics']
 
           res.setHeader('Content-Type', 'application/json')
           res.statusCode = 200
           res.end(
             JSON.stringify({
-              match_score: Math.min(95, Math.max(65, 75 + extractedTech.length * 5)),
+              match_score: Math.min(95, Math.max(55, 65 + extractedTech.length * 5)),
               missing_keywords: missingKeywords,
               scraped_insights: [
                 `Extracted target requirements from provided JD snippet (${jdText.slice(0, 45)}...).`,

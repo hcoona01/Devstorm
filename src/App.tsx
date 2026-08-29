@@ -9,11 +9,10 @@ const VIDEO_SRC =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_041744_63efcd78-bf7d-4039-99e2-2461e8a61903.mp4'
 const SENSITIVITY = 0.8
 const EMAIL = 'stackalign@gmail.com'
-const NAV_LINKS = ['Live HR Agent', 'AI Resume Builder and Project Finder', 'ATS Checker'] as const
+const NAV_LINKS = ['Live HR Agent', 'AI Resume Builder and Project Finder'] as const
 const PILL_LABELS = [
   'Live HR Agent',
-  'AI Resume Builder and Project Finder',
-  'ATS Checker', 
+  'AI Resume Builder and Project Finder'
 ] as const
 const TYPEWRITER_TEXT =
   `We are building a platform to help you find the
@@ -189,18 +188,29 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const [isFadingOut, setIsFadingOut] = useState(false)
+  const [fadeIn, setFadeIn] = useState(false)
+
+  useEffect(() => {
+    const anim = requestAnimationFrame(() => setFadeIn(true))
+    return () => cancelAnimationFrame(anim)
+  }, [])
+
   const closeMenu = () => setMenuOpen(false)
 
   const handleActionClick = () => {
     if (currentUser) {
-      navigate('/analyzer')
+      setIsFadingOut(true)
+      setTimeout(() => {
+        navigate('/analyzer')
+      }, 450)
     } else {
       openAuthModal('signup')
     }
   }
 
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-x-hidden bg-black text-white selection:bg-white selection:text-black">
+    <div className={`relative min-h-[100dvh] w-full overflow-x-hidden bg-black text-white selection:bg-white selection:text-black transition-all duration-500 ease-in-out ${isFadingOut || !fadeIn ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'}`}>
       {/* Background Interactive Video */}
       <video
         ref={videoRef}
@@ -446,18 +456,20 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
               </button>
             ))}
 
-            {/* Email Reach Us Button */}
-            <button
-              type="button"
-              onClick={copyEmail}
-              className="inline-flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-full border border-white/80 bg-white/10 backdrop-blur-md px-3.5 py-1.5 text-xs sm:px-5 sm:py-2 sm:text-sm font-medium text-white transition-all duration-200 hover:bg-white hover:text-black active:scale-95 cursor-pointer"
-            >
-              <span>
-                Reach us:{' '}
-                <span className="underline underline-offset-2">{EMAIL}</span>
-              </span>
-              {copied ? <CheckIcon /> : <CopyIcon />}
-            </button>
+            {/* Email Reach Us Button (Next Line) */}
+            <div className="w-full pt-1.5 sm:pt-2">
+              <button
+                type="button"
+                onClick={copyEmail}
+                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-full border border-white/80 bg-white/10 backdrop-blur-md px-3.5 py-1.5 text-xs sm:px-5 sm:py-2 sm:text-sm font-medium text-white transition-all duration-200 hover:bg-white hover:text-black active:scale-95 cursor-pointer"
+              >
+                <span>
+                  Reach us:{' '}
+                  <span className="underline underline-offset-2">{EMAIL}</span>
+                </span>
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </button>
+            </div>
           </div>
         </div>
       </main>
