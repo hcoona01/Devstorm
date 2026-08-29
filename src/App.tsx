@@ -238,12 +238,11 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
           >
             StackAlign®
           </span>
-          <span
-            className="select-none text-[18px] text-emerald-400 sm:text-[20px] lg:text-[24px]"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            ✳︎
-          </span>
+          <img
+            src="/logo.png"
+            alt="StackAlign Logo"
+            className="h-[18px] sm:h-[22px] lg:h-[24px] w-auto object-contain select-none transition-transform duration-300 hover:scale-110"
+          />
         </Link>
 
         {/* Desktop / Tablet Navigation Links */}

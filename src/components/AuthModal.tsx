@@ -213,7 +213,7 @@ export default function AuthModal({
         <div className="mb-5 sm:mb-6 text-center pt-1">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur-sm mb-2.5 sm:mb-3">
             <span>StackAlign®</span>
-            <span className="text-emerald-400">✳︎</span>
+            <img src="/logo.png" alt="StackAlign Logo" className="h-3.5 w-auto object-contain select-none" />
             <span className="text-white/60">Portal</span>
           </div>
           <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl md:text-3xl">
