@@ -1,3 +1,5 @@
+declare const process: any;
+
 export default async function handler(req: any, res: any) {
   // CORS configuration for Vercel Serverless Function
   res.setHeader('Access-Control-Allow-Credentials', 'true');
