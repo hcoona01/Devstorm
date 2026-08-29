@@ -19,14 +19,22 @@ interface AnalysisResults {
 export default function ResumeAnalyzerView() {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<AnalysisResults | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setResumeFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setResumeFile(file);
+      try {
+        const text = await file.text();
+        setResumeText(text);
+      } catch {
+        setResumeText(`Candidate Resume File: ${file.name}`);
+      }
     }
   };
 
@@ -45,6 +53,7 @@ export default function ResumeAnalyzerView() {
       payload.append('job_description', jobDescription);
       if (resumeFile) {
         payload.append('resume', resumeFile);
+        payload.append('resume_text', resumeText || `Candidate Resume File: ${resumeFile.name}`);
       }
 
       const response = await fetch('/api/analyze-cv', {

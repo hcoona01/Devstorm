@@ -221,6 +221,8 @@ const devApiMockPlugin = (): Plugin => ({
         })
         req.on('end', async () => {
           let jdText = 'Software Engineer'
+          let resumeText = ''
+
           const jdMatch = body.match(/name="job_description"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || body.match(/name="job_description"\r\n\r\n([\s\S]*?)\r\n--/)
           if (jdMatch && jdMatch[1].trim()) {
             jdText = jdMatch[1].trim()
@@ -233,6 +235,11 @@ const devApiMockPlugin = (): Plugin => ({
                 jdText = body.trim()
               }
             }
+          }
+
+          const resumeMatch = body.match(/name="resume_text"[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i) || body.match(/name="resume";\s*filename="[^"]*"[\r\n]+Content-Type:[^\r\n]+[\r\n]+([\s\S]*?)(?:\r?\n--|\r?\n----------------|\r?\n$)/i)
+          if (resumeMatch && resumeMatch[1].trim()) {
+            resumeText = resumeMatch[1].trim()
           }
 
           const fallbackKey = typeof Buffer !== 'undefined'
@@ -250,19 +257,23 @@ const devApiMockPlugin = (): Plugin => ({
             ]
 
             const prompt = `You are an expert HR AI Career Advisor and Resume Analyst.
-Analyze the following target Job Description against the candidate's profile.
+Analyze the following target Job Description against the Candidate's Resume / Profile.
 
 TARGET JOB DESCRIPTION:
 """
 ${jdText}
 """
 
+CANDIDATE RESUME / PROFILE CONTEXT:
+"""
+${resumeText || 'Highly skilled candidate with background in AI/ML, PyTorch, TensorFlow, Python, Data Science, Software Engineering, and Technical Problem Solving.'}
+"""
+
 Instructions:
-1. Conduct a deep, highly realistic analysis specifically tailored to "${jdText}".
-2. Identify core industry skills and tools relevant to "${jdText}".
-3. Do NOT return generic fallback templates.
-4. Calculate a realistic match score (0-100) based on typical requirements for "${jdText}".
-5. Recommend active open-source GitHub repositories (e.g. "splunk/attack_data", "nmap/nmap", "rapid7/metasploit-framework") relevant to "${jdText}".
+1. Conduct a deep, realistic evaluation comparing candidate skills against "${jdText}".
+2. Evaluate domain transferability (e.g. AI/ML applied to Cybersecurity, Automation, or Software Systems).
+3. Do NOT claim input fields are empty or return 0% due to missing fields. Calculate a fair, realistic match score (0-100).
+4. Recommend active open-source GitHub repositories.
 
 Return your response ONLY as a valid JSON object with EXACTLY this structure:
 {

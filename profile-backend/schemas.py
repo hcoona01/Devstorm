@@ -117,3 +117,18 @@ class JobMatchesResponse(BaseModel):
     total_jobs_analyzed: int
     matches: List[JobMatchItem]
 
+
+class LanguageEnhanceRequest(BaseModel):
+    text: str = Field(..., min_length=1, description="Text to enhance")
+    tone: Optional[Literal["professional", "casual", "formal", "friendly", "confident", "preserve"]] = Field(
+        default="preserve",
+        description="Desired tone for enhancement (preserve keeps original tone)"
+    )
+
+
+class LanguageEnhanceResponse(BaseModel):
+    enhanced_text: str
+    original_text: str
+    enhancement_applied: bool
+    error: Optional[str] = None
+

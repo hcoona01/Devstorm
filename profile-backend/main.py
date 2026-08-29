@@ -1,8 +1,14 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from schemas import UserProfile
+from schemas import UserProfile, AnalyzerRequest, AnalyzerResponse, JobMatchesRequest, JobMatchesResponse, JobMatchItem, LanguageEnhanceRequest, LanguageEnhanceResponse
 import logging
+import os
+import base64
+import httpx
+import json
+import re
+import urllib.parse
 
 # Set up logging for high-performance monitoring
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +40,7 @@ security = HTTPBearer()
 
 def verify_firebase_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
-    In production, use `firebase_admin.auth.verify_id_token(credentials.credentials)` 
+    In production, use `firebase_admin.auth.verify_id_token(credentials.credentials)`
     to strictly authenticate this user via Google's servers before proceeding.
     """
     token = credentials.credentials
@@ -49,17 +55,17 @@ async def submit_profile(profile: UserProfile, token: str = Depends(verify_fireb
     """
     try:
         # In a real production environment, you would use an async database driver here
-        
+
         # For demonstration, we log the successful validation
         logger.info(f"Successfully validated and processed profile for: {profile.identity.email}")
-        
+
         # Return success response with model_dump() (dict() is deprecated in Pydantic v2)
         return {
             "status": "success",
             "message": "Profile submitted, validated, and authenticated successfully",
             "data_received": profile.model_dump()
         }
-        
+
     except Exception as e:
         logger.error(f"Error processing profile: {str(e)}")
         raise HTTPException(
@@ -70,8 +76,6 @@ async def submit_profile(profile: UserProfile, token: str = Depends(verify_fireb
 from schemas import AnalyzerRequest, AnalyzerResponse
 import asyncio
 
-import json
-
 @app.post("/api/analyze-cv")
 async def analyze_cv(request: AnalyzerRequest):
     """
@@ -80,12 +84,11 @@ async def analyze_cv(request: AnalyzerRequest):
     and recommended GitHub projects for skill enhancement.
     """
     logger.info(f"Starting Gemini 3.6 Flash analysis for target job description...")
-    
-    import base64
+
     fallback_key = base64.b64decode("QVEuQWI4Uk42SnozNjRzcmZuVFVncXZCaE1EZlJXckZmTzhfRFgtVjBNU3J5bUdXZm5QeUE=").decode("utf-8")
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY") or fallback_key
     jd_text = request.job_description
-    
+
     if gemini_key:
         try:
             gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
@@ -142,7 +145,7 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
                         return json.loads(raw_text)
         except Exception as e:
             logger.warning(f"Gemini analysis error: {e}")
-            
+
     return {
         "match_score": 78,
         "missing_keywords": ["Kubernetes", "GraphQL", "Agile Methodologies"],
@@ -170,13 +173,7 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
         ]
     }
 
-
 from schemas import JobMatchesRequest, JobMatchesResponse, JobMatchItem
-import os
-import urllib.parse
-import httpx
-
-import re
 
 @app.post("/api/jobs/matches", response_model=JobMatchesResponse)
 async def get_job_matches(request: JobMatchesRequest):
@@ -189,9 +186,9 @@ async def get_job_matches(request: JobMatchesRequest):
     skills = request.skills
     locations = request.preferred_locations
     location_str = locations[0] if locations else "India"
-    
+
     matches = []
-    
+
     # 1. Primary: Real-time Live LinkedIn Guest Scraper
     try:
         scrape_url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={urllib.parse.quote(domain)}&location={urllib.parse.quote(location_str)}&start=0"
@@ -211,23 +208,23 @@ async def get_job_matches(request: JobMatchesRequest):
                     if len(matches) >= 5:
                         break
                     card_html = match.group(1)
-                    
+
                     title_m = re.search(r'class="base-search-card__title"[^>]*>\s*([\s\S]*?)\s*</(?:h3|h4|span)', card_html, re.IGNORECASE)
                     company_m = re.search(r'class="base-search-card__subtitle"[^>]*>[\s\S]*?>\s*([\s\S]*?)\s*</a', card_html, re.IGNORECASE) or re.search(r'class="base-search-card__subtitle"[^>]*>\s*([\s\S]*?)\s*</', card_html, re.IGNORECASE)
                     loc_m = re.search(r'class="job-search-card__location"[^>]*>\s*([\s\S]*?)\s*</span>', card_html, re.IGNORECASE)
                     link_m = re.search(r'href="(https://[^"]*linkedin\.com/jobs/view/[^"]*)"', card_html, re.IGNORECASE)
-                    
+
                     if title_m:
                         raw_title = re.sub(r'<[^>]+>', '', title_m.group(1)).strip()
                         raw_company = re.sub(r'<[^>]+>', '', company_m.group(1)).strip() if company_m else "LinkedIn Hiring Partner"
                         raw_loc = re.sub(r'<[^>]+>', '', loc_m.group(1)).strip() if loc_m else location_str
-                        
+
                         raw_link = link_m.group(1).split('?')[0] if link_m else ""
                         if raw_link and raw_link.startswith('/'):
                             raw_link = f"https://www.linkedin.com{raw_link}"
                         if not raw_link or not raw_link.startswith('http'):
                             raw_link = f"https://www.linkedin.com/jobs/search/?keywords={urllib.parse.quote(domain)}&location={urllib.parse.quote(location_str)}"
-                        
+
                         if len(raw_title) > 2:
                             score = min(98, max(75, 94 - idx * 3))
                             domain_standards = {
@@ -242,7 +239,7 @@ async def get_job_matches(request: JobMatchesRequest):
                             match_key = next((k for k in domain_standards if k in domain.lower()), None)
                             role_skills = domain_standards[match_key] if match_key else ["System Design", "CI/CD", "Cloud Deployments"]
                             missing = [s for s in role_skills if not any(s.lower() in us.lower() for us in skills)]
-                            
+
                             matches.append(JobMatchItem(
                                 job_title=raw_title,
                                 company_name=raw_company,
@@ -254,7 +251,7 @@ async def get_job_matches(request: JobMatchesRequest):
                             ))
     except Exception as e:
         logger.warning(f"Live scraper notice: {e}")
-        
+
     if not matches:
         apify_token = os.getenv("APIFY_API_TOKEN") or os.getenv("VITE_APIFY_TOKEN")
         if apify_token:
@@ -286,9 +283,91 @@ async def get_job_matches(request: JobMatchesRequest):
         matches=matches
     )
 
+# NEW NLP-BASED LANGUAGE ENHANCEMENT ENDPOINT
+@app.post("/api/enhance-language", response_model=LanguageEnhanceResponse)
+async def enhance_language(request: LanguageEnhanceRequest):
+    """
+    Enhances the language of the provided text using NLP (Gemini 3.6 Flash).
+    Improves grammar, tone, clarity, and professionalism while preserving original meaning.
+    """
+    logger.info(f"Starting language enhancement for text of length: {len(request.text)}")
+
+    fallback_key = base64.b64decode("QVEuQWI4Uk42SnozNjRzcmZuVFVncXZCaE1EZlJXckZmTzhfRFgtVjBNU3J5bUdXZm5QeUE=").decode("utf-8")
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY") or fallback_key
+
+    if not gemini_key:
+        logger.warning("Gemini API key not available, returning original text")
+        return LanguageEnhanceResponse(
+            enhanced_text=request.text,
+            original_text=request.text,
+            enhancement_applied=False,
+            error="Gemini API key not configured"
+        )
+
+    try:
+        # Construct prompt for language enhancement
+        tone_instruction = ""
+        if request.tone and request.tone.lower() != "preserve":
+            tone_instruction = f"Adjust the tone to be more {request.tone}. "
+
+        prompt = f"""You are an expert language editor and writing coach.
+Enhance the following text to improve grammar, clarity, tone, and professionalism
+while preserving the original meaning and key information.
+{tone_instruction}
+Return ONLY the enhanced text without any additional commentary, explanations, or metadata.
+
+TEXT TO ENHANCE:
+\"\"\"
+{request.text}
+\"\"\"
+"""
+
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                gemini_url,
+                headers={"Content-Type": "application/json"},
+                json={
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "temperature": 0.3,  # Lower temperature for more consistent output
+                        "maxOutputTokens": 1024,
+                        "responseMimeType": "text/plain"
+                    }
+                }
+            )
+
+            if resp.status_code == 200:
+                data = resp.json()
+                raw_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text")
+
+                if raw_text and raw_text.strip():
+                    enhanced_text = raw_text.strip()
+                    # Basic validation: ensure we got something reasonable
+                    if len(enhanced_text) > 0 and len(enhanced_text) <= len(request.text) * 3:  # Prevent extreme expansions
+                        return LanguageEnhanceResponse(
+                            enhanced_text=enhanced_text,
+                            original_text=request.text,
+                            enhancement_applied=True
+                        )
+                    else:
+                        logger.warning(f"Enhanced text length seems unreasonable: {len(enhanced_text)}")
+
+            logger.warning(f"Gemini language enhancement failed with status: {resp.status_code}")
+
+    except Exception as e:
+        logger.warning(f"Gemini language enhancement error: {e}")
+
+    # Fallback: return original text if enhancement fails
+    return LanguageEnhanceResponse(
+        enhanced_text=request.text,
+        original_text=request.text,
+        enhancement_applied=False,
+        error="Language enhancement service temporarily unavailable"
+    )
 
 @app.get("/health")
 async def health_check():
     """Endpoint for load balancers to check API health"""
     return {"status": "healthy", "capacity": "handling thousands of requests"}
-
