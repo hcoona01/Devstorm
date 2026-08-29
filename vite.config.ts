@@ -219,10 +219,79 @@ const devApiMockPlugin = (): Plugin => ({
         req.on('data', (chunk) => {
           body += chunk
         })
-        req.on('end', () => {
+        req.on('end', async () => {
           const jdMatch = body.match(/name="job_description"\r\n\r\n([\s\S]*?)\r\n--/)
           const jdText = jdMatch ? jdMatch[1].trim() : body
 
+          const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY
+
+          if (geminiApiKey) {
+            try {
+              const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`
+              const prompt = `You are an expert HR AI Career Advisor and Resume Analyst.
+Analyze the following Job Description against the candidate's target profile.
+
+JOB DESCRIPTION:
+"""
+${jdText}
+"""
+
+Perform a comprehensive, professional analysis.
+Return your response ONLY as a valid JSON object with EXACTLY this structure:
+{
+  "match_score": 82,
+  "missing_keywords": ["Keyword1", "Keyword2", "Keyword3"],
+  "scraped_insights": [
+    "Insight statement 1...",
+    "Insight statement 2...",
+    "Insight statement 3..."
+  ],
+  "improvement_points": [
+    {
+      "category": "Category Name",
+      "suggestion": "Clear suggestion...",
+      "original_text": "Original bullet...",
+      "improved_text": "Improved bullet..."
+    }
+  ],
+  "action_plan": [
+    {
+      "id": "task-gemini-1",
+      "title": "Actionable task title",
+      "description": "Specific project task description for skill enhancement...",
+      "priority": "High",
+      "estimated_time": "3 hours",
+      "github_repo_recommendation": "owner/repo"
+    }
+  ]
+}`
+
+              const geminiRes = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: { responseMimeType: 'application/json' },
+                }),
+              })
+
+              if (geminiRes.ok) {
+                const geminiData: any = await geminiRes.json()
+                const rawJsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
+                if (rawJsonText) {
+                  const parsedAnalysis = JSON.parse(rawJsonText)
+                  res.setHeader('Content-Type', 'application/json')
+                  res.statusCode = 200
+                  res.end(JSON.stringify(parsedAnalysis))
+                  return
+                }
+              }
+            } catch (geminiErr) {
+              console.warn('Gemini analysis notice:', geminiErr)
+            }
+          }
+
+          // Fallback if Gemini request is unavailable
           const extractedTech = ['Docker', 'GraphQL', 'Kubernetes', 'FastAPI', 'TypeScript', 'TailwindCSS', 'Redis', 'Python', 'React', 'Figma']
             .filter((t) => jdText.toLowerCase().includes(t.toLowerCase()))
 
@@ -237,7 +306,6 @@ const devApiMockPlugin = (): Plugin => ({
               scraped_insights: [
                 `Extracted target requirements from provided JD snippet (${jdText.slice(0, 45)}...).`,
                 `Analyzed real-time stack gaps: ${missingKeywords.join(', ')} missing from current profile.`,
-                'Apify real-time market search shows 25+ matching open listings for this exact requirement.',
               ],
               improvement_points: [
                 {
@@ -245,12 +313,6 @@ const devApiMockPlugin = (): Plugin => ({
                   suggestion: `Add explicit mention of ${missingKeywords[0] || 'target tech'} to your resume summary.`,
                   original_text: 'Experienced developer with strong problem-solving skills.',
                   improved_text: `Results-driven engineer specialized in ${missingKeywords.slice(0, 2).join(' & ')} with scalable architecture experience.`,
-                },
-                {
-                  category: 'Action Verbs & Impact',
-                  suggestion: 'Quantify your past project outcomes with measurable performance metrics.',
-                  original_text: 'Built features for the client application.',
-                  improved_text: 'Designed and deployed core module microservices improving request throughput by 40%.',
                 },
               ],
               action_plan: [
@@ -261,14 +323,6 @@ const devApiMockPlugin = (): Plugin => ({
                   priority: 'High',
                   estimated_time: '3 hours',
                   github_repo_recommendation: `topics/${(missingKeywords[0] || 'awesome').toLowerCase()}`,
-                },
-                {
-                  id: 'task-apify-2',
-                  title: `Implement ${missingKeywords[1] || 'CI/CD'} Pipeline`,
-                  description: `Configure automated testing and deployment workflows for target role.`,
-                  priority: 'Medium',
-                  estimated_time: '2 hours',
-                  github_repo_recommendation: 'actions/starter-workflows',
                 },
               ],
             })
