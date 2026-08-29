@@ -145,7 +145,7 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
       match_score: Math.min(95, Math.max(55, 65 + extractedTech.length * 5)),
       ats_breakdown: {
         hard_skills_score: 75,
-        experience_level_score": 70,
+        experience_level_score: 70,
         soft_skills_score: 80,
         education_cert_score: 70,
         format_impact_score: 75,
