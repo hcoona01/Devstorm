@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut, 
   onAuthStateChanged,
   type User
 } from 'firebase/auth';
-import { ref, set, update, onValue, type Unsubscribe } from 'firebase/database';
+import { ref, set, update, get, onValue, type Unsubscribe } from 'firebase/database';
 import { auth, db } from '../firebase';
 import { 
   AuthContext, 
@@ -51,6 +53,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function login(email: string, password: string) {
     setPendingProfileSetup(false);
     return signInWithEmailAndPassword(auth, email, password);
+  }
+
+  async function loginWithGoogle(role: UserRole = 'job_seeker') {
+    setPendingProfileSetup(false);
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
+
+    const userRef = ref(db, 'users/' + user.uid);
+    const snapshot = await get(userRef);
+    if (!snapshot.exists()) {
+      const newProfile: UserProfile = {
+        email: user.email || '',
+        name: user.displayName || '',
+        role: role,
+        createdAt: new Date().toISOString(),
+      };
+      await set(userRef, newProfile);
+      setUserProfile(newProfile);
+      setPendingProfileSetup(true);
+    }
+
+    return userCredential;
   }
 
   async function logout() {
@@ -119,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     startProfileSetup,
     signup,
     login,
+    loginWithGoogle,
     logout,
     updateProfileData,
     authModalOpen,

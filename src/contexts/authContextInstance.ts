@@ -46,6 +46,7 @@ export interface AuthContextType {
   startProfileSetup: () => void;
   signup: (email: string, password: string, role?: UserRole) => Promise<UserCredential>;
   login: (email: string, password: string) => Promise<UserCredential>;
+  loginWithGoogle: (role?: UserRole) => Promise<UserCredential>;
   logout: () => Promise<void>;
   updateProfileData?: (data: Partial<UserProfile>) => Promise<void>;
   authModalOpen: boolean;
