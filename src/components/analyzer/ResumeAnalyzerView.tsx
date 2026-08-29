@@ -30,6 +30,8 @@ export default function ResumeAnalyzerView() {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeText, setResumeText] = useState('');
+  const [pastedResumeText, setPastedResumeText] = useState('');
+  const [activeInputTab, setActiveInputTab] = useState<'upload' | 'paste'>('upload');
 
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<AnalysisResults | null>(null);
@@ -55,8 +57,9 @@ export default function ResumeAnalyzerView() {
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobDescription.trim()) {
-      setError('Please paste a target Job Description.');
+    const finalResumeContent = pastedResumeText.trim() || resumeText.trim();
+    if (!resumeFile && !finalResumeContent) {
+      setError('Please upload a CV / Resume file or paste your Resume text below.');
       return;
     }
 
@@ -65,11 +68,11 @@ export default function ResumeAnalyzerView() {
 
     try {
       const payload = new FormData();
-      payload.append('job_description', jobDescription);
+      payload.append('job_description', jobDescription.trim() || 'General Career & Technical Role');
       if (resumeFile) {
         payload.append('resume', resumeFile);
-        payload.append('resume_text', resumeText || `Candidate Resume File: ${resumeFile.name}`);
       }
+      payload.append('resume_text', finalResumeContent || `Candidate Resume File: ${resumeFile?.name || 'Uploaded CV'}`);
 
       const response = await fetch('/api/analyze-cv', {
         method: 'POST',
@@ -81,37 +84,6 @@ export default function ResumeAnalyzerView() {
       }
 
       const data = (await response.json()) as AnalysisResults;
-
-      // Ensure fallback mock data for testing if action_plan isn't sent
-      if (!data.action_plan || data.action_plan.length === 0) {
-        data.action_plan = [
-          {
-            id: 't1',
-            title: 'Build FastAPI Microservice',
-            description: 'Implement a REST API service with JWT authentication and Async Pydantic v2 schemas.',
-            priority: 'High',
-            estimated_time: '3 hours',
-            github_repo_recommendation: 'tiangolo/fastapi',
-          },
-          {
-            id: 't2',
-            title: 'Containerize with Docker',
-            description: 'Write a multi-stage Dockerfile optimizing production image size under 150MB.',
-            priority: 'Medium',
-            estimated_time: '2 hours',
-            github_repo_recommendation: 'docker/awesome-compose',
-          },
-          {
-            id: 't3',
-            title: 'GraphQL Schema Setup',
-            description: 'Integrate Apollo/GraphQL queries to address the JD backend requirements.',
-            priority: 'Medium',
-            estimated_time: '4 hours',
-            github_repo_recommendation: 'graphql/graphql-js',
-          },
-        ];
-      }
-
       setResults(data);
     } catch (err: any) {
       setError(err?.message || 'An error occurred during analysis.');
@@ -123,13 +95,12 @@ export default function ResumeAnalyzerView() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* Section Header */}
-      <div style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', maxWidth: 540, margin: '0 auto' }}>
         <h2 className="lab-section-title">
-          AI Resume & CV Gap Analyzer
+          AI CV & Resume Competency Analyzer
         </h2>
-        <p className="lab-section-subtitle" style={{ margin: '6px auto 0', maxWidth: 460 }}>
-          Upload your resume and paste a target Job Description for private,
-          AI-powered keyword matching and skill recommendations.
+        <p className="lab-section-subtitle" style={{ margin: '6px auto 0', maxWidth: 480 }}>
+          Parse your CV / Resume to evaluate ATS keyword match, competency scores, bullet fixes, and tailored skill roadmaps.
         </p>
       </div>
 
@@ -139,42 +110,90 @@ export default function ResumeAnalyzerView() {
       {/* Input Form */}
       <div className="lab-panel">
         <form onSubmit={handleAnalyze} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* CV / Resume Section (PRIMARY) */}
           <div>
-            <label className="lab-label" style={{ display: 'block', marginBottom: 10 }}>
-              Target Job Description
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <label className="lab-label" style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#2A2824' }}>
+                PRIMARY INPUT: CANDIDATE CV / RESUME
+              </label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveInputTab('upload')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    fontFamily: 'var(--lab-mono)',
+                    border: '1px solid var(--lab-border)',
+                    background: activeInputTab === 'upload' ? '#2A2824' : '#FFFDF9',
+                    color: activeInputTab === 'upload' ? '#FFFDF9' : '#2A2824',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveInputTab('paste')}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    fontFamily: 'var(--lab-mono)',
+                    border: '1px solid var(--lab-border)',
+                    background: activeInputTab === 'paste' ? '#2A2824' : '#FFFDF9',
+                    color: activeInputTab === 'paste' ? '#FFFDF9' : '#2A2824',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Paste CV Text
+                </button>
+              </div>
+            </div>
+
+            {activeInputTab === 'upload' ? (
+              <div>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt"
+                  onChange={handleFileChange}
+                  className="lab-file-input"
+                />
+                {resumeFile && (
+                  <p className="lab-success" style={{ marginTop: 8 }}>
+                    ✓ Attached CV File: {resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)
+                  </p>
+                )}
+              </div>
+            ) : (
+              <textarea
+                rows={7}
+                value={pastedResumeText}
+                onChange={(e) => setPastedResumeText(e.target.value)}
+                placeholder="Paste full text of your CV / Resume here (e.g. Summary, Skills, Work Experience, Projects, Education)..."
+                className="lab-textarea"
+              />
+            )}
+          </div>
+
+          {/* Target Role or JD Section (OPTIONAL / SECONDARY) */}
+          <div>
+            <label className="lab-label" style={{ display: 'block', marginBottom: 8 }}>
+              TARGET ROLE OR JOB DESCRIPTION (OPTIONAL)
             </label>
             <textarea
-              required
-              rows={5}
+              rows={3}
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the full job description or project requirements here..."
+              placeholder="e.g. Data Scientist & AI/ML Engineer, or paste a target Job Description to compare against..."
               className="lab-textarea"
             />
           </div>
 
-          <div>
-            <label className="lab-label" style={{ display: 'block', marginBottom: 10 }}>
-              Resume — PDF or DOCX, max 5 MB
-            </label>
-            <input
-              type="file"
-              accept=".pdf,.docx,.doc"
-              onChange={handleFileChange}
-              className="lab-file-input"
-            />
-            {resumeFile && (
-              <p className="lab-success" style={{ marginTop: 8 }}>
-                ✓ Selected: {resumeFile.name} ({(resumeFile.size / 1024).toFixed(1)} KB)
-              </p>
-            )}
-          </div>
-
           <button type="submit" disabled={loading} className="lab-btn">
             {loading ? (
-              <span className="lab-loading-pulse">Analyzing Resume and Job Description...</span>
+              <span className="lab-loading-pulse">Parsing Resume & Calculating ATS Competency...</span>
             ) : (
-              'Analyze Resume & Generate Roadmap'
+              'Parse Resume & Evaluate ATS Competency'
             )}
           </button>
         </form>

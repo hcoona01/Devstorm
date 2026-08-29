@@ -256,29 +256,29 @@ const devApiMockPlugin = (): Plugin => ({
               'gemini-3-flash-preview',
             ]
 
-            const prompt = `You are an Enterprise ATS (Applicant Tracking System) Evaluation Engine (built according to Taleo, Jobscan, and Greenhouse ATS parsing standards).
-Analyze the following target Job Description against the Candidate's Resume / Profile.
+            const prompt = `You are an Enterprise ATS (Applicant Tracking System) & Resume Competency Evaluation Engine.
 
-TARGET JOB DESCRIPTION:
+PRIMARY CANDIDATE CV / RESUME CONTENT:
 """
-${jdText}
+${resumeText || jdText || 'Senior AI/ML Engineer with expertise in Python, PyTorch, TensorFlow, LLMs, NLP, Deep Learning, MLOps, System Architecture, and Data Science.'}
 """
 
-CANDIDATE RESUME / PROFILE CONTEXT:
+TARGET ROLE / JOB DESCRIPTION CONTEXT:
 """
-${resumeText || 'Highly skilled candidate with background in AI/ML, PyTorch, TensorFlow, Python, Data Science, Software Engineering, and Technical Problem Solving.'}
+${jdText || 'Data Scientist & AI/ML Engineer'}
 """
 
 Instructions:
-1. Conduct a strict Enterprise ATS match evaluation calculating a composite match score (0-100%) based on:
-   - Hard Skills & Tech Keyword Match (40% weight)
-   - Experience & Seniority Alignment (20% weight)
-   - Soft Skills & Leadership (20% weight)
+1. Parse the candidate's CV/Resume as the PRIMARY document.
+2. Calculate the overall ATS Score of the CV/Resume (0-100%) based on:
+   - Technical Skill Depth & Hard Keywords (40% weight)
+   - Experience Quality & Quantified Achievements (20% weight)
+   - Domain Competency & Role Alignment (20% weight)
    - Education & Credentials (10% weight)
-   - Formatting & Action-Verb Impact (10% weight)
-2. Extract exact MATCHED keywords and MISSING critical keywords.
-3. Calculate sub-scores (0-100) for each of the 5 criteria.
-4. Recommend active open-source GitHub repositories for skill enhancement.
+   - ATS Formatting, Action Verbs, and Readability (10% weight)
+3. Extract ALL matched core keywords directly from the candidate's CV/Resume.
+4. Identify 3-5 critical missing keywords or advanced tools that would elevate this CV for top-tier roles.
+5. Provide specific CV bullet-point improvements and targeted open-source GitHub project recommendations.
 
 Return your response ONLY as a valid JSON object with EXACTLY this structure:
 {
