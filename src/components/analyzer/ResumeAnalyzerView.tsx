@@ -40,8 +40,13 @@ export default function ResumeAnalyzerView() {
       const file = e.target.files[0];
       setResumeFile(file);
       try {
-        const text = await file.text();
-        setResumeText(text);
+        const rawText = await file.text();
+        const cleanWords = rawText.match(/[A-Za-z0-9+#.\-]{2,}/g);
+        if (cleanWords && cleanWords.length > 15) {
+          setResumeText(cleanWords.join(' '));
+        } else {
+          setResumeText(`Candidate Resume File: ${file.name}`);
+        }
       } catch {
         setResumeText(`Candidate Resume File: ${file.name}`);
       }
