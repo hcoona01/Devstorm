@@ -26,6 +26,23 @@ interface AnalysisResults {
   action_plan?: ActionPlanTask[];
 }
 
+function extractCleanTextFromRaw(raw: string, filename: string): string {
+  // Remove binary streams & PDF metadata tags
+  let text = raw.replace(/\/Filter|\/FlateDecode|\/Length|\/Type|\/FontDescriptor|\/MediaBox|\/Parent|\/Catalog/g, ' ');
+  text = text.replace(/ stream[\s\S]*?endstream/g, ' ');
+  text = text.replace(/<<[\s\S]*?>>/g, ' ');
+  // Match readable words and punctuation
+  const words = text.match(/[A-Za-z0-9+#.\-@_]{2,}/g);
+  if (words && words.length > 20) {
+    // Filter out obscure PDF font encoding tokens
+    const filtered = words.filter(
+      (w) => !/^[0-9A-Fa-f]{6,}$/.test(w) && !/^(obj|endobj|xref|trailer|startxref)$/i.test(w)
+    );
+    if (filtered.length > 15) return filtered.join(' ');
+  }
+  return `Candidate CV File: ${filename}`;
+}
+
 export default function ResumeAnalyzerView() {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -43,17 +60,17 @@ export default function ResumeAnalyzerView() {
       setResumeFile(file);
       try {
         const rawText = await file.text();
-        const cleanWords = rawText.match(/[A-Za-z0-9+#.\-]{2,}/g);
-        if (cleanWords && cleanWords.length > 15) {
-          setResumeText(cleanWords.join(' '));
-        } else {
-          setResumeText(`Candidate Resume File: ${file.name}`);
-        }
+        const cleaned = extractCleanTextFromRaw(rawText, file.name);
+        setResumeText(cleaned);
+        setPastedResumeText(cleaned);
       } catch {
-        setResumeText(`Candidate Resume File: ${file.name}`);
+        const fallback = `Candidate CV File: ${file.name}`;
+        setResumeText(fallback);
+        setPastedResumeText(fallback);
       }
     }
   };
+
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();

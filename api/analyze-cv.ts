@@ -1,5 +1,79 @@
-declare const process: any;
-declare const Buffer: any;
+function computeDeterministicATS(resumeText: string, jdText: string) {
+  const cvLower = resumeText.toLowerCase();
+
+  // Tech keywords library
+  const knownTech = [
+    'python', 'javascript', 'typescript', 'react', 'node', 'express', 'docker', 'kubernetes',
+    'aws', 'cloud', 'sql', 'postgresql', 'mongodb', 'redis', 'graphql', 'rest', 'api',
+    'git', 'ci/cd', 'devops', 'linux', 'java', 'c++', 'c#', 'go', 'golang', 'fastapi',
+    'machine learning', 'deep learning', 'ai', 'nlp', 'pytorch', 'tensorflow', 'pandas',
+    'numpy', 'scikit-learn', 'data science', 'cybersecurity', 'siem', 'figma', 'agile', 'scrum'
+  ];
+
+  const matchedTech = knownTech.filter((t) => cvLower.includes(t));
+  const missingTech = knownTech.filter((t) => jdText.toLowerCase().includes(t) && !cvLower.includes(t));
+
+  // Action verbs check
+  const actionVerbs = ['built', 'engineered', 'developed', 'designed', 'optimized', 'led', 'managed', 'implemented', 'architected', 'created', 'automated', 'deployed'];
+  const matchedVerbs = actionVerbs.filter((v) => cvLower.includes(v));
+
+  // Metrics check (numbers, %, $)
+  const hasMetrics = (cvLower.match(/\d+%/g) || []).length + (cvLower.match(/\$\d+/g) || []).length + (cvLower.match(/\b\d{2,}\b/g) || []).length;
+
+  // Education check
+  const hasEdu = /b\.?s|b\.?tech|m\.?s|master|bachelor|phd|degree|university|college|institute/i.test(resumeText);
+
+  // Compute breakdown scores
+  const hard_skills_score = Math.min(100, Math.max(40, matchedTech.length * 8 + 40));
+  const experience_level_score = Math.min(100, Math.max(35, matchedVerbs.length * 10 + 40));
+  const soft_skills_score = cvLower.includes('team') || cvLower.includes('collaboration') || cvLower.includes('leadership') ? 85 : 70;
+  const education_cert_score = hasEdu ? 85 : 60;
+  const format_impact_score = Math.min(100, Math.max(50, (hasMetrics > 0 ? 30 : 0) + (resumeText.length > 200 ? 50 : 20)));
+
+  const match_score = Math.round(
+    hard_skills_score * 0.35 +
+    experience_level_score * 0.25 +
+    soft_skills_score * 0.15 +
+    education_cert_score * 0.15 +
+    format_impact_score * 0.10
+  );
+
+  return {
+    match_score,
+    ats_breakdown: {
+      hard_skills_score,
+      experience_level_score,
+      soft_skills_score,
+      education_cert_score,
+      format_impact_score,
+    },
+    matched_keywords: matchedTech.length > 0 ? matchedTech.slice(0, 8).map(t => t.toUpperCase()) : ['PYTHON', 'SYSTEM DESIGN'],
+    missing_keywords: missingTech.length > 0 ? missingTech.slice(0, 5).map(t => t.toUpperCase()) : ['DOCKER', 'KUBERNETES', 'CI/CD PIPELINES'],
+    scraped_insights: [
+      `Evaluated CV text (${resumeText.split(/\s+/).length} words parsed).`,
+      `Identified ${matchedTech.length} technical skills and ${matchedVerbs.length} high-impact action verbs.`,
+      hasMetrics > 0 ? `Detected ${hasMetrics} quantified impact metrics (% and numbers) in work experience.` : 'No quantified metrics (% or numbers) found in bullet points.',
+    ],
+    improvement_points: [
+      {
+        category: 'Technical Keywords',
+        suggestion: `Incorporate explicit keywords like ${missingTech.slice(0, 3).join(', ') || 'Docker, CI/CD, Microservices'} into your technical skills section.`,
+        original_text: 'Worked on software development projects.',
+        improved_text: `Engineered applications using ${matchedTech.slice(0, 2).join(' & ') || 'modern frameworks'} with automated deployment pipelines.`,
+      },
+    ],
+    action_plan: [
+      {
+        id: 'task-det-1',
+        title: `Integrate ${missingTech[0] || 'Cloud & DevOps'} Best Practices`,
+        description: `Build a production-ready module demonstrating hands-on experience with ${missingTech[0] || 'Docker & CI/CD'}.`,
+        priority: 'High',
+        estimated_time: '3 hours',
+        github_repo_recommendation: `topics/${(missingTech[0] || 'awesome').toLowerCase().replace(/\s+/g, '-')}`,
+      },
+    ],
+  };
+}
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -47,7 +121,7 @@ export default async function handler(req: any, res: any) {
       : '';
     const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || fallbackKey;
 
-    if (geminiApiKey) {
+    if (geminiApiKey && resumeText.length > 10) {
       const candidateModels = [
         'gemini-2.5-flash',
         'gemini-2.0-flash',
@@ -57,32 +131,30 @@ export default async function handler(req: any, res: any) {
         'gemini-2.0-flash-exp',
       ];
 
-
       const prompt = `You are an Enterprise ATS (Applicant Tracking System) & Resume Competency Evaluation Engine.
+Your evaluation MUST be strictly deterministic, accurate, and consistent. The exact same CV content MUST ALWAYS yield the exact same score and breakdown.
 
 PRIMARY CANDIDATE CV / RESUME CONTENT:
 """
-${resumeText || jdText || 'Senior AI/ML Engineer with expertise in Python, PyTorch, TensorFlow, LLMs, NLP, Deep Learning, MLOps, System Architecture, and Data Science.'}
+${resumeText}
 """
 
 TARGET ROLE / JOB DESCRIPTION CONTEXT:
 """
-${jdText || 'Data Scientist & AI/ML Engineer'}
+${jdText}
 """
 
-Instructions:
-1. Parse the candidate's CV/Resume as the PRIMARY document.
-2. Calculate the overall ATS Score of the CV/Resume (0-100%) based on:
-   - Technical Skill Depth & Hard Keywords (40% weight)
-   - Experience Quality & Quantified Achievements (20% weight)
-   - Domain Competency & Role Alignment (20% weight)
-   - Education & Credentials (10% weight)
-   - ATS Formatting, Action Verbs, and Readability (10% weight)
-3. Extract ALL matched core keywords directly from the candidate's CV/Resume.
-4. Identify 3-5 critical missing keywords or advanced tools that would elevate this CV for top-tier roles.
-5. Provide specific CV bullet-point improvements and targeted open-source GitHub project recommendations.
+INSTRUCTIONS FOR DETERMINISTIC ATS EVALUATION:
+1. Parse candidate's CV as the primary document.
+2. Evaluate scores according to strict criteria (0-100%):
+   - hard_skills_score (35%): Ratio of technical skills to target role requirements.
+   - experience_level_score (25%): Quality of achievements and strong action verbs (engineered, built, optimized).
+   - soft_skills_score (15%): Leadership, communication, and team metrics.
+   - education_cert_score (15%): Degrees, certifications, and academic background.
+   - format_impact_score (10%): Readability and presence of quantified metrics (% or numbers).
+3. Compute match_score = Math.round(hard_skills_score*0.35 + experience_level_score*0.25 + soft_skills_score*0.15 + education_cert_score*0.15 + format_impact_score*0.10).
+4. Return ONLY valid JSON matching this exact JSON schema:
 
-Return your response ONLY as a valid JSON object with EXACTLY this structure:
 {
   "match_score": 78,
   "ats_breakdown": {
@@ -92,17 +164,16 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
     "education_cert_score": 70,
     "format_impact_score": 80
   },
-  "matched_keywords": ["MatchedSkill1", "MatchedSkill2"],
-  "missing_keywords": ["MissingSkill1", "MissingSkill2"],
+  "matched_keywords": ["Skill1", "Skill2"],
+  "missing_keywords": ["Missing1", "Missing2"],
   "scraped_insights": [
     "ATS Analysis Insight 1...",
-    "ATS Analysis Insight 2...",
-    "ATS Analysis Insight 3..."
+    "ATS Analysis Insight 2..."
   ],
   "improvement_points": [
     {
       "category": "ATS Category",
-      "suggestion": "Clear ATS optimization suggestion for ${jdText}...",
+      "suggestion": "Clear ATS optimization suggestion...",
       "original_text": "Original resume bullet...",
       "improved_text": "ATS-friendly bullet with action verb and metrics..."
     }
@@ -111,7 +182,7 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
     {
       "id": "task-gemini-1",
       "title": "Actionable task title",
-      "description": "Specific project task description for skill enhancement...",
+      "description": "Specific project task description...",
       "priority": "High",
       "estimated_time": "3 hours",
       "github_repo_recommendation": "owner/repo"
@@ -127,7 +198,11 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: 'application/json' },
+              generationConfig: {
+                temperature: 0.0,
+                topP: 0.1,
+                responseMimeType: 'application/json',
+              },
             }),
           });
 
@@ -139,7 +214,6 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
               const parsedAnalysis = JSON.parse(cleaned);
               return res.status(200).json(parsedAnalysis);
             }
-
           }
         } catch (geminiErr) {
           console.warn(`Gemini Vercel analysis notice for ${modelName}:`, geminiErr);
@@ -147,46 +221,11 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
       }
     }
 
-    const extractedTech = ['Docker', 'GraphQL', 'Kubernetes', 'FastAPI', 'TypeScript', 'TailwindCSS', 'Redis', 'Python', 'React', 'Figma', 'SIEM', 'Cybersecurity']
-      .filter((t) => jdText.toLowerCase().includes(t.toLowerCase()));
-
-    const missingKeywords = extractedTech.length > 0 ? extractedTech.slice(0, 3) : ['SIEM Monitoring', 'Incident Response', 'Network Forensics'];
-
-    return res.status(200).json({
-      match_score: Math.min(95, Math.max(55, 65 + extractedTech.length * 5)),
-      ats_breakdown: {
-        hard_skills_score: 75,
-        experience_level_score: 70,
-        soft_skills_score: 80,
-        education_cert_score: 70,
-        format_impact_score: 75,
-      },
-      matched_keywords: ['Python', 'System Design'],
-      missing_keywords: missingKeywords,
-      scraped_insights: [
-        `Extracted target requirements from provided JD snippet (${jdText.slice(0, 45)}...).`,
-        `Analyzed real-time stack gaps: ${missingKeywords.join(', ')} missing from current profile.`,
-      ],
-      improvement_points: [
-        {
-          category: 'Keyword Optimization',
-          suggestion: `Add explicit mention of ${missingKeywords[0] || 'target tech'} to your resume summary.`,
-          original_text: 'Experienced developer with strong problem-solving skills.',
-          improved_text: `Results-driven engineer specialized in ${missingKeywords.slice(0, 2).join(' & ')} with scalable architecture experience.`,
-        },
-      ],
-      action_plan: [
-        {
-          id: 'task-apify-1',
-          title: `Master ${missingKeywords[0] || 'Core Tech'} Integration`,
-          description: `Build a production-ready module demonstrating proficiency in ${missingKeywords[0] || 'Target Stack'}.`,
-          priority: 'High',
-          estimated_time: '3 hours',
-          github_repo_recommendation: `topics/${(missingKeywords[0] || 'awesome').toLowerCase()}`,
-        },
-      ],
-    });
+    // Fallback deterministic calculation engine
+    const deterministicResult = computeDeterministicATS(resumeText || jdText, jdText);
+    return res.status(200).json(deterministicResult);
   } catch (error: any) {
     return res.status(500).json({ error: error?.message || 'Internal Server Error' });
   }
 }
+
