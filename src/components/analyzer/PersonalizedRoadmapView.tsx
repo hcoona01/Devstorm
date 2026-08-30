@@ -99,7 +99,7 @@ export default function PersonalizedRoadmapView() {
     const envKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || '';
     if (envKey) return envKey;
     try {
-      return atob('QVEuQWI4Uk42SnozNjRzcmZuVFVncXZCaE1EZlJXckZmTzhfRFgtVjBNU3J5bUdXZm5QeUE=');
+      return atob('QVEuQWI4Uk42SV9NNVJfVUowUnFaODRhemk2YTcxUUVXcjU4dkVndWxTaU1lc3c3bGpxY1E=');
     } catch {
       return '';
     }
