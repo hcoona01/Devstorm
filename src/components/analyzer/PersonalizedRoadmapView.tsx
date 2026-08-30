@@ -580,8 +580,12 @@ INSTRUCTIONS:
 
           {/* Interactive Task Scheduler & Kanban Manager */}
           <div style={{ marginTop: 16 }}>
-            <TaskScheduler tasks={roadmapTasks} />
+            <TaskScheduler
+              tasks={roadmapTasks}
+              storageKey={currentUser?.uid ? `roadmap_${currentUser.uid}` : 'roadmap_guest'}
+            />
           </div>
+
         </div>
       )}
     </div>
