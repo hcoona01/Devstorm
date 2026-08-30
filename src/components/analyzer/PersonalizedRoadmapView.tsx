@@ -182,7 +182,14 @@ INSTRUCTIONS:
 }
 `;
 
-    const apiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const apiModels = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro',
+      'gemini-2.0-flash-lite',
+      'gemini-2.0-flash-exp',
+    ];
     let parsedResult: RoadmapData | null = null;
     let lastError: Error | null = null;
 
@@ -191,7 +198,7 @@ INSTRUCTIONS:
         setStatusMsg(`Calling Gemini API (${modelName})…`);
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-        const res = await fetch(url, {
+        let res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -208,6 +215,24 @@ INSTRUCTIONS:
         });
 
         if (!res.ok) {
+          // Fallback call without responseMimeType in case model rejects config
+          res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [{ text: promptText }],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.2,
+              },
+            }),
+          });
+        }
+
+        if (!res.ok) {
           const errText = await res.text();
           throw new Error(`Gemini API error (${res.status}): ${errText}`);
         }
@@ -218,7 +243,11 @@ INSTRUCTIONS:
           throw new Error('Received empty response from Gemini API.');
         }
 
-        const cleaned = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+        const cleaned = rawText
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/```\s*$/, '')
+          .trim();
         parsedResult = JSON.parse(cleaned) as RoadmapData;
         break; // Successfully generated and parsed
       } catch (err: any) {
@@ -226,6 +255,7 @@ INSTRUCTIONS:
         lastError = err;
       }
     }
+
 
     setLoading(false);
     setStatusMsg('');
