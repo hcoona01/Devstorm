@@ -151,6 +151,16 @@
   border-color: var(--lab-ink);
 }
 
+@media (max-width: 860px) {
+  .lab-desktop-nav {
+    display: none !important;
+  }
+  .lab-mobile-toggle {
+    display: block !important;
+  }
+}
+
+
 /* ── Tab Switcher ─────────────────────────────────────────── */
 .lab-tabs {
   display: flex;
@@ -175,7 +185,7 @@
   text-align: center;
 }
 
-.lab-tab:first-child {
+.lab-tab:not(:last-child) {
   border-right: 1px solid var(--lab-border);
 }
 

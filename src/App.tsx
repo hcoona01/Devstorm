@@ -9,10 +9,11 @@ const VIDEO_SRC =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260826_041744_63efcd78-bf7d-4039-99e2-2461e8a61903.mp4'
 const SENSITIVITY = 0.8
 const EMAIL = 'stackalign@gmail.com'
-const NAV_LINKS = ['Live HR Agent', 'AI Resume Builder and Project Finder'] as const
+const NAV_LINKS = ['Live HR Agent', 'AI Resume Analyzer & Job Finder','Personalized Roadmap Guide'] as const
 const PILL_LABELS = [
   'Live HR Agent',
-  'AI Resume Builder and Project Finder'
+  'AI Resume Analyzer & Job Finder',
+  'Personalized Roadmap Guide'
 ] as const
 const TYPEWRITER_TEXT =
   `We are building a platform to help you find the
@@ -198,16 +199,38 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
 
   const closeMenu = () => setMenuOpen(false)
 
-  const handleActionClick = () => {
-    if (currentUser) {
-      setIsFadingOut(true)
-      setTimeout(() => {
-        navigate('/analyzer')
-      }, 450)
-    } else {
-      openAuthModal('signup')
+  const handleActionClick = (linkName?: string) => {
+    let targetPath = '/analyzer';
+    if (
+      linkName === 'Personalized Roadmap Guide' ||
+      linkName === 'Personalized Certification Guide'
+    ) {
+      targetPath = '/roadmap';
+    } else if (
+      linkName === 'AI Resume Analyzer' ||
+      linkName === 'AI Resume Analyzer & Job Finder' ||
+      linkName === 'AI Resume Analyzer and Job Finder' ||
+      linkName === 'AI Resume Analyzer, Suggester & Job Finder' ||
+      linkName === 'AI Resume Builder and Project Finder'
+    ) {
+      targetPath = '/analyzer?tab=resume';
+    } else if (linkName === 'Live HR Agent') {
+      targetPath = '/hr-agent';
     }
-  }
+
+
+
+    if (currentUser) {
+      setIsFadingOut(true);
+      setTimeout(() => {
+        navigate(targetPath);
+      }, 450);
+    } else {
+      openAuthModal('signup');
+    }
+  };
+
+
 
   return (
     <div className={`relative min-h-[100dvh] w-full overflow-x-hidden bg-black text-white selection:bg-white selection:text-black transition-all duration-500 ease-in-out ${isFadingOut || !fadeIn ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'}`}>
@@ -251,13 +274,14 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
             <button
               key={link}
               type="button"
-              onClick={handleActionClick}
+              onClick={() => handleActionClick(link)}
               className="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-white hover:text-black xl:px-4 xl:text-sm cursor-pointer"
             >
               {link}
             </button>
           ))}
         </nav>
+
 
         {/* Auth / User Section Desktop */}
         <div className="hidden items-center gap-2.5 lg:flex">
@@ -353,7 +377,7 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
                 className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-left text-base sm:text-lg font-medium text-white transition hover:bg-white/15 cursor-pointer"
                 onClick={() => {
                   closeMenu()
-                  handleActionClick()
+                  handleActionClick(link)
                 }}
               >
                 <span>{link}</span>
@@ -448,12 +472,13 @@ function App({ initialAuthMode, forceAuthModal = false }: AppProps) {
               <button
                 key={label}
                 type="button"
-                onClick={handleActionClick}
+                onClick={() => handleActionClick(label)}
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-3.5 py-1.5 text-xs sm:px-5 sm:py-2 sm:text-sm font-medium text-black transition-all duration-200 hover:bg-black hover:text-white hover:scale-105 active:scale-95 cursor-pointer shadow-sm"
               >
                 {label}
               </button>
             ))}
+
 
             {/* Email Reach Us Button (Next Line) */}
             <div className="w-full pt-1.5 sm:pt-2">

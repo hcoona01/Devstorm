@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/useAuth';
 import { Link } from 'react-router-dom';
+
+import LabHeader from './LabHeader';
 import type { ProjectItem } from '../contexts/authContextInstance';
+import './analyzer/AnalyzerTool.css';
 
 export default function Dashboard() {
-  const { currentUser, userProfile, logout, updateProfileData } = useAuth();
+  const { currentUser, userProfile, updateProfileData } = useAuth();
 
 
   const [isEditing, setIsEditing] = useState(false);
@@ -51,7 +54,7 @@ export default function Dashboard() {
     if (!updateProfileData) return;
 
     try {
-      setSaveStatus('Saving changes to Firebase...');
+      setSaveStatus('Saving profile updates to Firebase...');
       await updateProfileData({
         displayName,
         name: displayName,
@@ -63,11 +66,11 @@ export default function Dashboard() {
         current_skills: skills,
         projects,
       });
-      setSaveStatus('✓ Profile updated successfully in Firebase!');
+      setSaveStatus('✓ Profile updated successfully in Firebase');
       setIsEditing(false);
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (err: any) {
-      setSaveStatus('Error saving: ' + (err?.message || 'Check database connection'));
+      setSaveStatus('Error saving profile: ' + (err?.message || 'Check connection'));
     }
   };
 
@@ -160,7 +163,7 @@ export default function Dashboard() {
   const roleLabel = userProfile?.role === 'employer' ? 'Hirer / Employer' : 'Job Seeker';
 
   return (
-    <div className="min-h-screen bg-[#f3f2ef] text-[#191919] font-sans antialiased pb-16">
+    <div className="lab-page opacity-100">
       
       {/* Hidden File Picker for Resume */}
       <input
@@ -168,471 +171,577 @@ export default function Dashboard() {
         type="file"
         accept=".pdf,.docx,.doc,.txt"
         onChange={handleCVUpload}
-        className="hidden"
+        style={{ display: 'none' }}
       />
 
-      {/* Top LinkedIn Style Navigation Bar */}
-      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white px-4 py-2.5 shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-1.5 text-[#0a66c2] font-black text-2xl tracking-tighter">
-              <span>in</span>
-            </Link>
-            <span className="text-sm font-semibold text-neutral-800">
-              StackAlign Profile
-            </span>
-          </div>
+      {/* Responsive Lab Header with Uniform Logo */}
+      <LabHeader
+        activeTag="Profile Hub"
+        onEditProfileToggle={() => setIsEditing(!isEditing)}
+        isEditingProfile={isEditing}
+        showOnlyHomeAndLogout={true}
+      />
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              to="/analyzer"
-              className="flex items-center gap-1 rounded-full bg-[#0a66c2] text-white px-3.5 py-1 text-xs font-semibold hover:bg-[#004182] transition shadow-sm"
-            >
-              ⚡ AI Resume & Project Finder
-            </Link>
 
-            <button
-              type="button"
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center gap-1.5 rounded-full border border-[#0a66c2] px-4 py-1 text-xs font-semibold text-[#0a66c2] transition hover:bg-[#0a66c2]/10 cursor-pointer"
-            >
-              <span>{isEditing ? '✕ Cancel Edit' : '✎ Edit Profile'}</span>
-            </button>
 
-            <Link
-              to="/"
-              className="rounded-full border border-neutral-300 px-3.5 py-1 text-xs font-medium text-neutral-600 transition hover:bg-neutral-100"
-            >
-              Home
-            </Link>
-
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-full bg-neutral-100 px-3.5 py-1 text-xs font-medium text-neutral-700 hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
-            >
-              Log Out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Save Status Toast */}
+      {/* Save Status Banner */}
       {saveStatus && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#191919] px-5 py-2 text-xs font-semibold text-white shadow-lg animate-bounce">
+        <div style={{
+          position: 'fixed',
+          top: 70,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 50,
+          border: '1px solid var(--lab-ink)',
+          background: 'var(--lab-ink)',
+          color: 'var(--lab-white)',
+          padding: '10px 20px',
+          fontFamily: 'var(--lab-body)',
+          fontSize: 12,
+          fontWeight: 600,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>
           {saveStatus}
         </div>
       )}
 
-      {/* Main Container */}
-      <main className="mx-auto max-w-5xl px-4 pt-6 space-y-4">
-        
-        {/* Quick Launch Tool Banner */}
-        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="rounded-md bg-[#0a66c2] px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">New Tool</span>
-              <h2 className="text-sm font-bold text-neutral-900">AI Resume Builder & Project Finder</h2>
-            </div>
-            <p className="text-xs text-neutral-600">
-              Run AI keyword gap-analysis on your resume, track drag-and-drop learning roadmaps, and match with live jobs.
-            </p>
-          </div>
-          <Link
-            to="/analyzer"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0a66c2] px-4 py-2 text-xs font-semibold text-white hover:bg-[#004182] transition shadow-sm shrink-0"
+      {/* Hero Section */}
+      <section className="lab-hero" style={{ minHeight: 'auto', padding: '48px 24px 36px' }}>
+        <span className="lab-hero-meta">
+          StackAlign · Candidate Profile & Live Context Hub · 2026
+        </span>
+        <h1 className="lab-hero-title" style={{ fontSize: 'clamp(28px, 4vw, 44px)', margin: '0 0 12px' }}>
+          Candidate Profile & Career Dashboard
+        </h1>
+        <p className="lab-hero-subtitle" style={{ marginBottom: 20 }}>
+          Manage your background context, technical skills matrix, and uploaded resume. Synchronized in real-time with Firebase to power your AI tools.
+        </p>
+        <div className="lab-hero-actions" style={{ flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>
+          <button
+            type="button"
+            className="lab-btn"
+            style={{ width: 'auto', padding: '10px 22px' }}
+            onClick={() => setIsEditing(!isEditing)}
           >
-            <span>Launch Tool ↗</span>
-          </Link>
+            {isEditing ? '✕ Cancel Editing' : '✎ Edit Profile Context'}
+          </button>
+          <button
+            type="button"
+            className="lab-btn-outline"
+            style={{ width: 'auto', padding: '10px 22px' }}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingCV}
+          >
+            {uploadingCV ? 'Uploading…' : '↑ Upload Resume / CV'}
+          </button>
         </div>
-        
-        {/* 1. MAIN PROFILE CARD */}
-        <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          {/* Header Banner */}
-          <div className="h-32 sm:h-44 w-full bg-gradient-to-r from-[#0a66c2] via-[#004182] to-[#002244] relative" />
+      </section>
 
-          {/* Profile Header Content */}
-          <div className="relative px-6 pb-6 pt-0">
-            {/* Overlapping Avatar */}
-            <div className="-mt-16 sm:-mt-20 mb-4 flex items-end justify-between">
-              <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full border-4 border-white bg-[#0a66c2] text-4xl sm:text-5xl font-bold text-white shadow-md">
-                {actualName.charAt(0).toUpperCase()}
+      {/* Main Profile Content */}
+      <main className="lab-content" style={{ paddingTop: 32 }}>
+        
+        {/* Section Identifier Header */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 12 }}>
+            <h2 className="lab-section-title">Profile Data Context</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="lab-tag lab-tag-green">Firebase Synced</span>
+              <span className="lab-label">Protocol v3.2</span>
+            </div>
+          </div>
+          <p className="lab-section-subtitle">
+            Recorded profile details, skills ratings, and projects feed into Gemini AI for generating personalized roadmaps and resume gap analyses.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+          {/* 1. MAIN PROFILE SUMMARY CARD */}
+          <div className="lab-panel-warm" style={{ borderLeft: '4px solid var(--lab-ink)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
+                  <span className="lab-mono" style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 40,
+                    height: 40,
+                    background: 'var(--lab-ink)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 18,
+                  }}>
+                    {actualName.charAt(0).toUpperCase()}
+                  </span>
+                  <div>
+                    <h3 className="lab-heading" style={{ fontSize: 24, margin: 0, lineHeight: 1.2 }}>
+                      {actualName}
+                    </h3>
+                    <span className="lab-tag lab-tag-ink" style={{ marginTop: 4 }}>● {roleLabel}</span>
+                  </div>
+                </div>
+                <p className="lab-body" style={{ margin: '4px 0 0', fontWeight: 600, color: 'var(--lab-ink)', fontSize: 15 }}>
+                  {targetRole || 'Target Role: Not specified yet'}
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="rounded-full border border-[#0a66c2] bg-white px-4 py-1.5 text-xs font-semibold text-[#0a66c2] hover:bg-[#0a66c2]/10 transition cursor-pointer"
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="lab-btn-sm"
                 >
-                  ✎ Edit Intro
+                  {isEditing ? '✕ Close Edit' : '✎ Edit Profile'}
                 </button>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingCV}
-                  className="rounded-full bg-[#0a66c2] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#004182] transition cursor-pointer shadow-sm"
+                  className="lab-btn-sm"
+                  style={{ background: 'var(--lab-ink)', color: '#fff' }}
                 >
-                  {uploadingCV ? 'Uploading...' : 'Upload CV / Resume'}
+                  {uploadingCV ? 'Uploading…' : '↑ Upload CV'}
                 </button>
               </div>
             </div>
 
-            {/* Profile Intro Info */}
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-neutral-900">
-                  {actualName}
-                </h1>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
-                  ● {roleLabel}
-                </span>
-                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200">
-                  Firebase Sync Active
-                </span>
+            {/* Profile Info Details Grid */}
+            <div className="lab-grid-3" style={{ gap: 16, marginBottom: 16 }}>
+              <div>
+                <span className="lab-label">Institution / College</span>
+                <p className="lab-body" style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--lab-ink)', fontWeight: 500 }}>
+                  {institution || 'Not set'}
+                </p>
               </div>
-
-              <p className="text-sm sm:text-base font-medium text-neutral-800">
-                {targetRole || 'Target Role: Not set'}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500 pt-1">
-                {institution && <span>🏛 {institution}</span>}
-                {cgpa && <span>🎓 CGPA: <strong className="text-neutral-700">{cgpa}</strong></span>}
-                {address && <span>📍 {address}</span>}
-                <span className="font-mono text-neutral-600">✉ {userEmail}</span>
+              <div>
+                <span className="lab-label">Grade / CGPA</span>
+                <p className="lab-body" style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--lab-ink)', fontWeight: 500 }}>
+                  {cgpa || 'Not set'}
+                </p>
+              </div>
+              <div>
+                <span className="lab-label">Account Email</span>
+                <p className="lab-body lab-mono" style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--lab-ink)' }}>
+                  {userEmail}
+                </p>
               </div>
             </div>
 
-            {/* Attached CV Quick Pill */}
+            {/* Attached CV Banner */}
             {currentCV && (
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                <div className="flex items-center gap-2.5 overflow-hidden">
-                  <span className="text-xl">📄</span>
-                  <div className="overflow-hidden">
-                    <p className="truncate text-xs font-bold text-neutral-800">{currentCV.name}</p>
-                    <p className="text-[10px] text-neutral-500">
-                      {(currentCV.size / 1024).toFixed(1)} KB • Uploaded {new Date(currentCV.uploadedAt).toLocaleDateString()}
-                    </p>
+              <div style={{
+                marginTop: 16,
+                padding: '12px 16px',
+                border: '1px solid var(--lab-border)',
+                background: 'var(--lab-white)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="lab-label">Attached Resume:</span>
+                    <strong className="lab-heading" style={{ fontSize: 13 }}>{currentCV.name}</strong>
                   </div>
+                  <span className="lab-body lab-mono" style={{ fontSize: 11 }}>
+                    {(currentCV.size / 1024).toFixed(1)} KB · Uploaded {new Date(currentCV.uploadedAt).toLocaleDateString()}
+                  </span>
                 </div>
                 {currentCV.dataUrl && (
                   <a
                     href={currentCV.dataUrl}
                     download={currentCV.name}
-                    className="shrink-0 rounded-lg bg-[#0a66c2] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#004182] transition"
+                    className="lab-btn-sm"
                   >
                     ↓ Download Resume
                   </a>
                 )}
               </div>
             )}
-            {cvMsg && <p className="text-xs font-semibold text-emerald-600 mt-2">{cvMsg}</p>}
+            {cvMsg && <p className="lab-success" style={{ marginTop: 10 }}>{cvMsg}</p>}
           </div>
-        </section>
 
-        {/* 2. INLINE EDIT FORM (When editing mode is toggled) */}
-        {isEditing && (
-          <section className="rounded-2xl border border-blue-300 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between border-b border-neutral-200 pb-3 mb-4">
-              <h2 className="text-base font-bold text-neutral-900">Edit Profile Information</h2>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="text-xs text-neutral-500 hover:text-neutral-800"
-              >
-                ✕ Cancel
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block font-semibold text-neutral-700 mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    className="w-full rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-neutral-700 mb-1">Target Headline / Role</label>
-                  <input
-                    type="text"
-                    value={targetRole}
-                    onChange={(e) => setTargetRole(e.target.value)}
-                    placeholder="e.g. Full-Stack Developer"
-                    className="w-full rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-neutral-700 mb-1">Institution / University</label>
-                  <input
-                    type="text"
-                    value={institution}
-                    onChange={(e) => setInstitution(e.target.value)}
-                    placeholder="e.g. State University"
-                    className="w-full rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-neutral-700 mb-1">CGPA / Score</label>
-                  <input
-                    type="text"
-                    value={cgpa}
-                    onChange={(e) => setCgpa(e.target.value)}
-                    placeholder="e.g. 3.8 / 4.0"
-                    className="w-full rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block font-semibold text-neutral-700 mb-1">Location / Address</label>
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="e.g. San Francisco, CA"
-                    className="w-full rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block font-semibold text-neutral-700 mb-1">About / Bio</label>
-                  <textarea
-                    rows={3}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Write a brief professional summary..."
-                    className="w-full rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
+          {/* 2. INLINE PROFILE EDIT FORM */}
+          {isEditing && (
+            <div className="lab-panel" style={{ border: '2px solid var(--lab-ink)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid var(--lab-border)' }}>
+                <h3 className="lab-heading" style={{ fontSize: 18, margin: 0 }}>
+                  Edit Profile Information
+                </h3>
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="rounded-full border border-neutral-300 px-4 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-100"
+                  className="lab-btn-sm"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-full bg-[#0a66c2] px-5 py-1.5 text-xs font-semibold text-white hover:bg-[#004182] transition shadow-sm cursor-pointer"
-                >
-                  Save to Database
+                  ✕ Close Form
                 </button>
               </div>
-            </form>
-          </section>
-        )}
 
-        {/* 3. ABOUT SECTION CARD */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-bold text-neutral-900">About</h2>
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="text-xs text-[#0a66c2] hover:underline font-semibold cursor-pointer"
-            >
-              ✎ Edit
-            </button>
-          </div>
-          <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed whitespace-pre-line">
-            {bio || 'No bio added yet. Click edit to add a summary of your professional background.'}
-          </p>
-        </section>
+              <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="lab-grid-3" style={{ gap: 16 }}>
+                  <div>
+                    <label className="lab-label-dark" style={{ display: 'block', marginBottom: 6 }}>Full Name</label>
+                    <input
+                      type="text"
+                      className="lab-input"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="lab-label-dark" style={{ display: 'block', marginBottom: 6 }}>Target Headline / Role</label>
+                    <input
+                      type="text"
+                      className="lab-input"
+                      value={targetRole}
+                      onChange={(e) => setTargetRole(e.target.value)}
+                      placeholder="e.g. Full-Stack Developer"
+                    />
+                  </div>
+                  <div>
+                    <label className="lab-label-dark" style={{ display: 'block', marginBottom: 6 }}>Institution / University</label>
+                    <input
+                      type="text"
+                      className="lab-input"
+                      value={institution}
+                      onChange={(e) => setInstitution(e.target.value)}
+                      placeholder="e.g. State University"
+                    />
+                  </div>
+                </div>
 
-        {/* 4. EDUCATION & ACADEMIC RECORD CARD */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-neutral-900">Education & Academic Record</h2>
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="text-xs text-[#0a66c2] hover:underline font-semibold cursor-pointer"
-            >
-              ✎ Edit
-            </button>
-          </div>
+                <div className="lab-grid-3" style={{ gap: 16 }}>
+                  <div>
+                    <label className="lab-label-dark" style={{ display: 'block', marginBottom: 6 }}>CGPA / Score</label>
+                    <input
+                      type="text"
+                      className="lab-input"
+                      value={cgpa}
+                      onChange={(e) => setCgpa(e.target.value)}
+                      placeholder="e.g. 3.8 / 4.0"
+                    />
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label className="lab-label-dark" style={{ display: 'block', marginBottom: 6 }}>Location / Address</label>
+                    <input
+                      type="text"
+                      className="lab-input"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="e.g. San Francisco, CA"
+                    />
+                  </div>
+                </div>
 
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg">
-              🏛
-            </div>
-            <div className="space-y-0.5">
-              <h3 className="text-sm font-bold text-neutral-900">
-                {institution || 'Institution name not set'}
-              </h3>
-              {cgpa && (
-                <p className="text-xs font-medium text-neutral-700">
-                  Grade / CGPA: <span className="font-semibold text-emerald-700">{cgpa}</span>
-                </p>
-              )}
-              {address && <p className="text-xs text-neutral-500">{address}</p>}
-            </div>
-          </div>
-        </section>
+                <div>
+                  <label className="lab-label-dark" style={{ display: 'block', marginBottom: 6 }}>Professional Bio / About</label>
+                  <textarea
+                    rows={3}
+                    className="lab-textarea"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Write a brief overview of your background, experience, and interests..."
+                  />
+                </div>
 
-        {/* 5. SKILLS SECTION CARD */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-neutral-900">
-              Skills ({Object.keys(skills).length})
-            </h2>
-          </div>
-
-          {Object.keys(skills).length === 0 ? (
-            <p className="text-xs text-neutral-500">No skills added yet. Add your top skills below:</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(skills).map(([k, v]) => (
-                <div
-                  key={k}
-                  className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3.5 py-1.5 text-xs font-medium text-neutral-800"
-                >
-                  <span className="capitalize">{k.replace(/_/g, ' ')}</span>
-                  <span className="rounded-full bg-[#0a66c2]/10 px-1.5 py-0.2 text-[10px] font-bold text-[#0a66c2]">
-                    {v}/10
-                  </span>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 8 }}>
                   <button
                     type="button"
-                    onClick={() => handleRemoveSkill(k)}
-                    className="text-neutral-400 hover:text-red-500 text-[11px] cursor-pointer ml-0.5"
-                    title="Remove skill"
+                    onClick={() => setIsEditing(false)}
+                    className="lab-btn-outline"
+                    style={{ width: 'auto', padding: '10px 20px' }}
                   >
-                    ✕
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="lab-btn"
+                    style={{ width: 'auto', padding: '10px 24px' }}
+                  >
+                    Save Changes to Firebase →
                   </button>
                 </div>
-              ))}
+              </form>
             </div>
           )}
 
-          {/* Quick Add Skill Form */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-100">
-            <input
-              type="text"
-              placeholder="Add a new skill (e.g. Python, Docker)"
-              value={newSkillName}
-              onChange={(e) => setNewSkillName(e.target.value)}
-              className="flex-1 min-w-[180px] rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none"
-            />
-            <select
-              value={newSkillScore}
-              onChange={(e) => setNewSkillScore(Number(e.target.value))}
-              className="rounded-lg border border-neutral-300 p-2 text-xs focus:border-[#0a66c2] focus:outline-none"
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                <option key={n} value={n}>
-                  Rating: {n}/10
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={handleAddSkill}
-              className="rounded-lg bg-[#0a66c2] px-4 py-2 text-xs font-semibold text-white hover:bg-[#004182] transition cursor-pointer"
-            >
-              + Add Skill
-            </button>
-          </div>
-        </section>
-
-        {/* 6. PROJECTS SECTION CARD */}
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-neutral-900">
-              Projects ({projects.length})
-            </h2>
+          {/* 3. ABOUT / BIO CARD */}
+          <div className="lab-panel">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <span className="lab-label">About / Bio</span>
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="lab-btn-sm"
+              >
+                ✎ Edit
+              </button>
+            </div>
+            <p className="lab-body" style={{ margin: 0, whiteSpace: 'pre-line', fontSize: 13, lineHeight: 1.7, color: 'var(--lab-ink)' }}>
+              {bio || 'No bio added yet. Click edit to add a summary of your professional background.'}
+            </p>
           </div>
 
-          {projects.length === 0 ? (
-            <p className="text-xs text-neutral-500">No projects added yet. Add a project below:</p>
-          ) : (
-            <div className="divide-y divide-neutral-100">
-              {projects.map((p) => (
-                <div key={p.id} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-neutral-900">{p.title}</h3>
-                      {p.techStack && (
-                        <span className="rounded bg-neutral-100 px-2 py-0.5 text-[10px] font-mono text-neutral-600">
-                          {p.techStack}
-                        </span>
-                      )}
+          {/* 4. ACADEMIC RECORD CARD */}
+          <div className="lab-panel">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid var(--lab-border)' }}>
+              <span className="lab-label">Education & Academic Record</span>
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="lab-btn-sm"
+              >
+                ✎ Edit
+              </button>
+            </div>
+
+            <div className="lab-data-row">
+              <div>
+                <span className="lab-label" style={{ display: 'block', marginBottom: 2 }}>Institution</span>
+                <strong className="lab-heading" style={{ fontSize: 15 }}>{institution || 'Institution name not set'}</strong>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span className="lab-label" style={{ display: 'block', marginBottom: 2 }}>Grade / CGPA</span>
+                <span className="lab-tag lab-tag-green lab-mono" style={{ fontSize: 12 }}>{cgpa || 'N/A'}</span>
+              </div>
+            </div>
+
+            {address && (
+              <div className="lab-data-row">
+                <div>
+                  <span className="lab-label" style={{ display: 'block', marginBottom: 2 }}>Location</span>
+                  <span className="lab-body" style={{ fontSize: 13 }}>{address}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 5. SKILLS MATRIX CARD */}
+          <div className="lab-panel">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid var(--lab-border)' }}>
+              <div>
+                <h3 className="lab-heading" style={{ fontSize: 18, margin: 0 }}>
+                  Skills ({Object.keys(skills).length})
+                </h3>
+                <span className="lab-label lab-mono">Recorded Technical Matrix</span>
+              </div>
+            </div>
+
+            {Object.keys(skills).length === 0 ? (
+              <p className="lab-body" style={{ fontSize: 13, marginBottom: 16 }}>No skills added yet. Add your top skills below:</p>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+                {Object.entries(skills).map(([k, v]) => (
+                  <div
+                    key={k}
+                    style={{
+                      border: '1px solid var(--lab-border)',
+                      background: 'var(--lab-paper)',
+                      padding: '6px 12px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    <span className="lab-body" style={{ fontSize: 12, fontWeight: 500, color: 'var(--lab-ink)', textTransform: 'capitalize' }}>
+                      {k.replace(/_/g, ' ')}
+                    </span>
+                    <span className="lab-tag lab-tag-ink lab-mono">{v}/10</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill(k)}
+                      style={{ background: 'none', border: 'none', color: '#8B4C39', cursor: 'pointer', fontSize: 11, padding: 0 }}
+                      title="Remove skill"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Quick Add Skill Form */}
+            <div style={{ borderTop: '1px solid var(--lab-border)', paddingTop: 16, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+              <input
+                type="text"
+                className="lab-input"
+                style={{ flex: 1, minWidth: 200 }}
+                placeholder="Add a new skill (e.g. Python, Docker)"
+                value={newSkillName}
+                onChange={(e) => setNewSkillName(e.target.value)}
+              />
+              <select
+                className="lab-input"
+                style={{ width: 'auto' }}
+                value={newSkillScore}
+                onChange={(e) => setNewSkillScore(Number(e.target.value))}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                  <option key={n} value={n}>
+                    Rating: {n}/10
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="lab-btn-sm"
+                onClick={handleAddSkill}
+              >
+                + Add Skill
+              </button>
+            </div>
+          </div>
+
+          {/* 6. PORTFOLIO PROJECTS CARD */}
+          <div className="lab-panel">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid var(--lab-border)' }}>
+              <div>
+                <h3 className="lab-heading" style={{ fontSize: 18, margin: 0 }}>
+                  Projects ({projects.length})
+                </h3>
+                <span className="lab-label lab-mono">Recorded Portfolio Entries</span>
+              </div>
+            </div>
+
+            {projects.length === 0 ? (
+              <p className="lab-body" style={{ fontSize: 13, marginBottom: 20 }}>No projects added yet. Add a project below:</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+                {projects.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      border: '1px solid var(--lab-border)',
+                      background: 'var(--lab-paper)',
+                      padding: 16,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <strong className="lab-heading" style={{ fontSize: 15 }}>{p.title}</strong>
+                        {p.techStack && <span className="lab-tag lab-tag-ink lab-mono">{p.techStack}</span>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveProject(p.id)}
+                        style={{ background: 'none', border: 'none', color: '#8B4C39', cursor: 'pointer', fontSize: 11 }}
+                        title="Delete project"
+                      >
+                        Delete ✕
+                      </button>
                     </div>
-                    {p.description && <p className="text-xs text-neutral-600">{p.description}</p>}
+                    {p.description && <p className="lab-body" style={{ fontSize: 12, marginBottom: 8 }}>{p.description}</p>}
                     {p.link && (
                       <a
-                        href={p.link}
+                        href={p.link.startsWith('http') ? p.link : `https://${p.link}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-block text-xs font-semibold text-[#0a66c2] hover:underline pt-0.5"
+                        className="lab-btn-sm"
+                        style={{ fontSize: 10, padding: '4px 10px' }}
                       >
                         View Project ↗
                       </a>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveProject(p.id)}
-                    className="text-neutral-400 hover:text-red-500 text-xs cursor-pointer p-1"
-                    title="Delete project"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
 
-          {/* Quick Add Project Form */}
-          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-2.5">
-            <h4 className="text-xs font-bold text-neutral-800">+ Add New Project</h4>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <input
-                type="text"
-                placeholder="Project Title"
-                value={newProjTitle}
-                onChange={(e) => setNewProjTitle(e.target.value)}
-                className="rounded-lg border border-neutral-300 p-2 text-xs bg-white focus:border-[#0a66c2] focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Tech Stack (e.g. React, Python)"
-                value={newProjStack}
-                onChange={(e) => setNewProjStack(e.target.value)}
-                className="rounded-lg border border-neutral-300 p-2 text-xs bg-white focus:border-[#0a66c2] focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Project / GitHub Link (optional)"
-                value={newProjLink}
-                onChange={(e) => setNewProjLink(e.target.value)}
-                className="rounded-lg border border-neutral-300 p-2 text-xs bg-white focus:border-[#0a66c2] focus:outline-none sm:col-span-2"
-              />
+            {/* Quick Add Project Form */}
+            <div style={{ border: '1px solid var(--lab-border)', background: 'var(--lab-paper-warm)', padding: 16 }}>
+              <span className="lab-label-dark" style={{ display: 'block', marginBottom: 12 }}>+ Add New Project</span>
+              <div className="lab-grid-3" style={{ gap: 12, marginBottom: 12 }}>
+                <input
+                  type="text"
+                  className="lab-input"
+                  placeholder="Project Title"
+                  value={newProjTitle}
+                  onChange={(e) => setNewProjTitle(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="lab-input"
+                  placeholder="Tech Stack (e.g. React, Python)"
+                  value={newProjStack}
+                  onChange={(e) => setNewProjStack(e.target.value)}
+                />
+                <input
+                  type="text"
+                  className="lab-input"
+                  placeholder="Project / GitHub Link (optional)"
+                  value={newProjLink}
+                  onChange={(e) => setNewProjLink(e.target.value)}
+                />
+              </div>
               <textarea
                 rows={2}
+                className="lab-textarea"
                 placeholder="Brief project description..."
                 value={newProjDesc}
                 onChange={(e) => setNewProjDesc(e.target.value)}
-                className="w-full rounded-lg border border-neutral-300 p-2 text-xs bg-white focus:border-[#0a66c2] focus:outline-none resize-none sm:col-span-2"
+                style={{ minHeight: 60, marginBottom: 12 }}
               />
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleAddProject}
-                className="rounded-lg bg-[#0a66c2] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#004182] transition cursor-pointer"
-              >
-                + Add Project
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="lab-btn-sm"
+                  onClick={handleAddProject}
+                >
+                  + Add Project
+                </button>
+              </div>
             </div>
           </div>
-        </section>
 
+          {/* 7. QUICK LAUNCH INSTRUMENTS */}
+          <div className="lab-grid-3" style={{ gap: 16, marginTop: 8 }}>
+            <div className="lab-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <span className="lab-label">Module 01</span>
+                <h4 className="lab-heading" style={{ fontSize: 16, margin: '4px 0 8px' }}>AI Resume Analyzer & Job Finder</h4>
+                <p className="lab-body" style={{ fontSize: 12, marginBottom: 16 }}>
+                  Analyze your resume against target roles, discover skill gaps, and match live positions.
+                </p>
+              </div>
+              <Link to="/analyzer" className="lab-btn-sm">
+                Launch Analyzer ↗
+              </Link>
+            </div>
+
+            <div className="lab-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <span className="lab-label">Module 02</span>
+                <h4 className="lab-heading" style={{ fontSize: 16, margin: '4px 0 8px' }}>Personalized Roadmap Guide</h4>
+                <p className="lab-body" style={{ fontSize: 12, marginBottom: 16 }}>
+                  Generate a personalized 4-stage career roadmap and interactive kanban task manager with Gemini AI.
+                </p>
+              </div>
+              <Link to="/roadmap" className="lab-btn-sm">
+                Launch Roadmap ↗
+              </Link>
+            </div>
+
+            <div className="lab-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <span className="lab-label">Navigation</span>
+                <h4 className="lab-heading" style={{ fontSize: 16, margin: '4px 0 8px' }}>Home Showcase</h4>
+                <p className="lab-body" style={{ fontSize: 12, marginBottom: 16 }}>
+                  Return to the primary StackAlign hero showcase landing page.
+                </p>
+              </div>
+              <Link to="/" className="lab-btn-sm">
+                Go to Home ↗
+              </Link>
+            </div>
+          </div>
+
+        </div>
       </main>
     </div>
   );

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import LabHeader from '../LabHeader';
 import ResumeAnalyzerView from './ResumeAnalyzerView';
 import JobMatchesView from './JobMatchesView';
 import './AnalyzerTool.css';
+
 
 /**
  * IntersectionObserver hook — adds 'visible' class to .lab-reveal elements
@@ -33,9 +35,25 @@ function useRevealObserver() {
 }
 
 export default function AnalyzerTool() {
-  const [activeTab, setActiveTab] = useState<'resume' | 'jobs'>('resume');
+  const [searchParams] = useSearchParams();
+  const initialTabParam = searchParams.get('tab');
+
+  const [activeTab, setActiveTab] = useState<'resume' | 'jobs' | 'certification'>(
+    initialTabParam === 'certification'
+      ? 'certification'
+      : initialTabParam === 'jobs'
+      ? 'jobs'
+      : 'resume'
+  );
   const [pageVisible, setPageVisible] = useState(false);
-  const navigate = useNavigate();
+
+  // Sync tab if search param changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'certification') setActiveTab('certification');
+    else if (tabParam === 'jobs') setActiveTab('jobs');
+    else if (tabParam === 'resume') setActiveTab('resume');
+  }, [searchParams]);
 
   // Hero reveal & page fade-in on mount
   useEffect(() => {
@@ -51,14 +69,6 @@ export default function AnalyzerTool() {
   // Reveal observer for content sections
   useRevealObserver();
 
-  const handleGoHome = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setPageVisible(false);
-    setTimeout(() => {
-      navigate('/');
-    }, 450);
-  };
-
   const scrollToContent = () => {
     const el = document.getElementById('lab-tool-content');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -66,10 +76,9 @@ export default function AnalyzerTool() {
 
   return (
     <div className={`lab-page transition-all duration-500 ease-out ${pageVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-      {/* ── Minimal Back Link (no full navbar) ─────────────── */}
-      <a href="/" onClick={handleGoHome} className="lab-back cursor-pointer">
-        ← Home
-      </a>
+      {/* Responsive Lab Header with Uniform StackAlign Logo */}
+      <LabHeader activeTag="AI Resume Analyzer" />
+
 
       {/* ── Opening Statement (Hero) ───────────────────────── */}
       <section className="lab-hero">
@@ -77,13 +86,13 @@ export default function AnalyzerTool() {
           StackAlign · AI Career Tools · 2026
         </span>
         <h1 className="lab-hero-title lab-hero-reveal delay-1">
-          Resume Builder &<br />
-          Project Finder
+          AI Resume Analyzer, Suggester & Job Finder
         </h1>
+
+
         <p className="lab-hero-subtitle lab-hero-reveal delay-2">
-          Upload your resume, paste a job description, and let AI identify
-          gaps, generate improvements, and surface live roles that fit
-          your exact stack.
+          Upload your resume, find matching live jobs, or generate an AI-tailored
+          certification & career roadmap complete with a task manager.
         </p>
         <div className="lab-hero-actions lab-hero-reveal delay-3">
           <button type="button" className="lab-btn" onClick={scrollToContent}>
@@ -108,8 +117,7 @@ export default function AnalyzerTool() {
             <span className="lab-label">Protocol v2.1</span>
           </div>
           <p className="lab-section-subtitle">
-            Two modules — one for rebuilding your resume against a target
-            role, one for surfacing live positions that match your skills.
+            Two modules — one for rebuilding your resume against a target role, one for surfacing live positions that match your skills.
           </p>
         </div>
 
@@ -141,3 +149,5 @@ export default function AnalyzerTool() {
     </div>
   );
 }
+
+

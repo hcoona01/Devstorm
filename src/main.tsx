@@ -8,6 +8,8 @@ import ProtectedRoute from './components/ProtectedRoute.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
 import ProfileSetup from './components/ProfileSetup.tsx'
 import AnalyzerTool from './components/analyzer/AnalyzerTool.tsx'
+import RoadmapTool from './components/analyzer/RoadmapTool.tsx'
+import LiveHRAgentPage from './components/LiveHRAgentPage.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -34,8 +36,26 @@ createRoot(document.getElementById('root')!).render(
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/roadmap"
+            element={
+              <ProtectedRoute>
+                <RoadmapTool />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/hr-agent"
+            element={
+              <ProtectedRoute>
+                <LiveHRAgentPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
+
+
 )
