@@ -1,4 +1,8 @@
+declare const process: any;
+declare const Buffer: any;
+
 function computeDeterministicATS(resumeText: string, jdText: string) {
+
   const cvLower = resumeText.toLowerCase();
 
   // Tech keywords library
