@@ -53,7 +53,10 @@ export default function PersonalizedRoadmapView() {
       const savedKey = `stackalign_roadmap_${currentUser?.uid || 'guest'}`;
       const savedData = localStorage.getItem(savedKey);
       if (savedData) {
-        const parsed = JSON.parse(savedData) as { roadmap: RoadmapData; tasks: ActionPlanTask[] };
+        const parsed = JSON.parse(savedData) as { roadmap: RoadmapData; tasks: ActionPlanTask[]; interestInput?: string };
+        if (parsed?.interestInput) {
+          setInterestInput(parsed.interestInput);
+        }
         if (parsed?.roadmap?.stages) {
           parsed.roadmap.stages = parsed.roadmap.stages.map((stg) => ({
             ...stg,
@@ -78,14 +81,18 @@ export default function PersonalizedRoadmapView() {
   }, [currentUser?.uid]);
 
   // Save roadmap & tasks to localStorage whenever updated
-  const saveRoadmapState = (newRoadmap: RoadmapData, newTasks: ActionPlanTask[]) => {
+  const saveRoadmapState = (newRoadmap: RoadmapData, newTasks: ActionPlanTask[], currentInput: string) => {
     try {
       const savedKey = `stackalign_roadmap_${currentUser?.uid || 'guest'}`;
-      localStorage.setItem(savedKey, JSON.stringify({ roadmap: newRoadmap, tasks: newTasks }));
+      localStorage.setItem(
+        savedKey,
+        JSON.stringify({ roadmap: newRoadmap, tasks: newTasks, interestInput: currentInput })
+      );
     } catch (e) {
       console.error('Failed to cache roadmap state:', e);
     }
   };
+
 
   const getEffectiveApiKey = () => {
     if (customApiKey.trim()) return customApiKey.trim();
@@ -325,8 +332,9 @@ INSTRUCTIONS:
 
     setRoadmap(parsedResult);
     setRoadmapTasks(allTasks);
-    saveRoadmapState(parsedResult, allTasks);
+    saveRoadmapState(parsedResult, allTasks, interestInput.trim());
   };
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>

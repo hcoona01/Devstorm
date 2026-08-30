@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/useAuth';
+
 import TaskScheduler, { type ActionPlanTask } from './TaskScheduler';
 
 interface ImprovementPoint {
@@ -155,6 +156,7 @@ function computeDeterministicATS(resumeText: string, jdText: string): AnalysisRe
 
 export default function ResumeAnalyzerView() {
   const { userProfile } = useAuth();
+  const storageKey = `stackalign_resume_analyzer_${userProfile?.uid || 'guest'}`;
 
   const [jobDescription, setJobDescription] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -167,6 +169,60 @@ export default function ResumeAnalyzerView() {
   const [statusMsg, setStatusMsg] = useState('');
   const [results, setResults] = useState<AnalysisResults | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Load saved state from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        if (parsed.results) setResults(parsed.results);
+        if (parsed.jobDescription) setJobDescription(parsed.jobDescription);
+        if (parsed.pastedResumeText) setPastedResumeText(parsed.pastedResumeText);
+        if (parsed.activeInputTab) setActiveInputTab(parsed.activeInputTab);
+        if (parsed.resumeText) setResumeText(parsed.resumeText);
+      }
+    } catch (e) {
+      console.error('Failed to load cached analyzer state:', e);
+    }
+  }, [storageKey]);
+
+  const saveAnalyzerState = (
+    newResults: AnalysisResults | null,
+    newJd: string,
+    newPasted: string,
+    newTab: 'upload' | 'paste',
+    newRawText: string
+  ) => {
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          results: newResults,
+          jobDescription: newJd,
+          pastedResumeText: newPasted,
+          activeInputTab: newTab,
+          resumeText: newRawText,
+        })
+      );
+    } catch (e) {
+      console.error('Failed to save analyzer state:', e);
+    }
+  };
+
+  const handleClearResults = () => {
+    if (window.confirm('Clear saved CV analysis results and inputs?')) {
+      setResults(null);
+      setJobDescription('');
+      setPastedResumeText('');
+      setResumeText('');
+      setResumeFile(null);
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {}
+    }
+  };
+
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -398,6 +454,7 @@ Return ONLY valid JSON matching this exact structure:
     }
 
     setResults(analysisData);
+    saveAnalyzerState(analysisData, targetJd, finalResumeContent, activeInputTab, resumeText);
     setLoading(false);
     setStatusMsg('');
   };
@@ -437,6 +494,16 @@ Return ONLY valid JSON matching this exact structure:
                     ⚡ Load Firebase Profile
                   </button>
                 )}
+                {results && (
+                  <button
+                    type="button"
+                    onClick={handleClearResults}
+                    className="lab-btn-sm"
+                    style={{ fontSize: 10, padding: '4px 10px', borderColor: 'var(--lab-border)' }}
+                  >
+                    ↺ Clear Analysis
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setActiveInputTab('upload')}
@@ -469,6 +536,7 @@ Return ONLY valid JSON matching this exact structure:
                 </button>
               </div>
             </div>
+
 
             {activeInputTab === 'upload' ? (
               <div>
