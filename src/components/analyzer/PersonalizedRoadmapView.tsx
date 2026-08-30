@@ -54,7 +54,20 @@ export default function PersonalizedRoadmapView() {
       const savedData = localStorage.getItem(savedKey);
       if (savedData) {
         const parsed = JSON.parse(savedData) as { roadmap: RoadmapData; tasks: ActionPlanTask[] };
-        if (parsed?.roadmap) {
+        if (parsed?.roadmap?.stages) {
+          parsed.roadmap.stages = parsed.roadmap.stages.map((stg) => ({
+            ...stg,
+            skills: Array.isArray(stg.skills)
+              ? stg.skills.map(String)
+              : typeof stg.skills === 'string'
+              ? [stg.skills]
+              : [],
+            certifications: Array.isArray(stg.certifications)
+              ? stg.certifications.map(String)
+              : typeof stg.certifications === 'string'
+              ? [stg.certifications]
+              : [],
+          }));
           setRoadmap(parsed.roadmap);
           if (parsed.tasks) setRoadmapTasks(parsed.tasks);
         }
@@ -224,6 +237,27 @@ INSTRUCTIONS:
           : 'Could not parse roadmap response from AI. Please try again.'
       );
       return;
+    }
+
+    // Normalize stage arrays defensively
+    if (Array.isArray(parsedResult.stages)) {
+      parsedResult.stages = parsedResult.stages.map((stg) => ({
+        ...stg,
+        title: String(stg.title || 'Stage'),
+        duration: String(stg.duration || 'Flexible'),
+        skills: Array.isArray(stg.skills)
+          ? stg.skills.map(String)
+          : typeof stg.skills === 'string'
+          ? [stg.skills]
+          : [],
+        certifications: Array.isArray(stg.certifications)
+          ? stg.certifications.map(String)
+          : typeof stg.certifications === 'string'
+          ? [stg.certifications]
+          : [],
+        project: String(stg.project || ''),
+        ready: String(stg.ready || ''),
+      }));
     }
 
     // Process tasks from stages into flat task list for TaskScheduler
@@ -424,70 +458,87 @@ INSTRUCTIONS:
 
           {/* Stage Cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {roadmap.stages.map((stage, idx) => (
-              <div key={idx} className="lab-panel" style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--lab-border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span
-                      className="lab-mono"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 28,
-                        height: 28,
-                        background: 'var(--lab-ink)',
-                        color: '#fff',
-                        fontWeight: 600,
-                        fontSize: 12,
-                      }}
-                    >
-                      {idx + 1}
-                    </span>
-                    <h4 className="lab-heading" style={{ fontSize: 18, margin: 0 }}>
-                      {stage.title}
-                    </h4>
-                  </div>
-                  <span className="lab-tag lab-tag-ink lab-mono">{stage.duration}</span>
-                </div>
+            {(roadmap.stages || []).map((stage, idx) => {
+              const skillsList = Array.isArray(stage.skills)
+                ? stage.skills
+                : typeof stage.skills === 'string'
+                ? [stage.skills]
+                : [];
 
-                <div className="lab-grid-3" style={{ gap: 20, marginBottom: 20 }}>
-                  <div>
-                    <span className="lab-label" style={{ display: 'block', marginBottom: 8 }}>Key Target Skills</span>
-                    <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--lab-ink-2)', fontSize: 13 }}>
-                      {(stage.skills || []).map((sk, sIdx) => (
-                        <li key={sIdx} style={{ marginBottom: 4 }}>{sk}</li>
-                      ))}
-                    </ul>
-                  </div>
+              const certsList = Array.isArray(stage.certifications)
+                ? stage.certifications
+                : typeof stage.certifications === 'string'
+                ? [stage.certifications]
+                : [];
 
-                  <div>
-                    <span className="lab-label" style={{ display: 'block', marginBottom: 8 }}>Recommended Certifications</span>
-                    <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--lab-ink-2)', fontSize: 13 }}>
-                      {(stage.certifications || []).map((cert, cIdx) => (
-                        <li key={cIdx} style={{ marginBottom: 4, fontWeight: cert.toLowerCase().includes('none') ? 400 : 500 }}>
-                          {cert}
-                        </li>
-                      ))}
-                    </ul>
+              return (
+                <div key={idx} className="lab-panel" style={{ position: 'relative' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--lab-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span
+                        className="lab-mono"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 28,
+                          height: 28,
+                          background: 'var(--lab-ink)',
+                          color: '#fff',
+                          fontWeight: 600,
+                          fontSize: 12,
+                        }}
+                      >
+                        {idx + 1}
+                      </span>
+                      <h4 className="lab-heading" style={{ fontSize: 18, margin: 0 }}>
+                        {stage.title}
+                      </h4>
+                    </div>
+                    <span className="lab-tag lab-tag-ink lab-mono">{stage.duration}</span>
                   </div>
 
-                  <div>
-                    <span className="lab-label" style={{ display: 'block', marginBottom: 8 }}>Stage Portfolio Project</span>
-                    <div style={{ background: 'var(--lab-paper)', padding: 12, border: '1px solid var(--lab-border)', fontSize: 12, lineHeight: 1.5 }}>
-                      {stage.project}
+                  <div className="lab-grid-3" style={{ gap: 20, marginBottom: 20 }}>
+                    <div>
+                      <span className="lab-label" style={{ display: 'block', marginBottom: 8 }}>Key Target Skills</span>
+                      <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--lab-ink-2)', fontSize: 13 }}>
+                        {skillsList.map((sk, sIdx) => (
+                          <li key={sIdx} style={{ marginBottom: 4 }}>{String(sk)}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <span className="lab-label" style={{ display: 'block', marginBottom: 8 }}>Recommended Certifications</span>
+                      <ul style={{ margin: 0, paddingLeft: 16, color: 'var(--lab-ink-2)', fontSize: 13 }}>
+                        {certsList.map((certItem, cIdx) => {
+                          const certStr = String(certItem || '');
+                          return (
+                            <li key={cIdx} style={{ marginBottom: 4, fontWeight: certStr.toLowerCase().includes('none') ? 400 : 500 }}>
+                              {certStr}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <span className="lab-label" style={{ display: 'block', marginBottom: 8 }}>Stage Portfolio Project</span>
+                      <div style={{ background: 'var(--lab-paper)', padding: 12, border: '1px solid var(--lab-border)', fontSize: 12, lineHeight: 1.5 }}>
+                        {stage.project}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div style={{ background: 'var(--lab-paper-warm)', padding: '10px 14px', border: '1px solid var(--lab-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="lab-label-dark" style={{ flexShrink: 0 }}>Readiness Signal:</span>
-                  <span className="lab-body" style={{ fontSize: 12, margin: 0 }}>
-                    {stage.ready}
-                  </span>
+                  <div style={{ background: 'var(--lab-paper-warm)', padding: '10px 14px', border: '1px solid var(--lab-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="lab-label-dark" style={{ flexShrink: 0 }}>Readiness Signal:</span>
+                    <span className="lab-body" style={{ fontSize: 12, margin: 0 }}>
+                      {stage.ready}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Interactive Task Scheduler & Kanban Manager */}
@@ -499,3 +550,4 @@ INSTRUCTIONS:
     </div>
   );
 }
+

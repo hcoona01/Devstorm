@@ -133,9 +133,11 @@ Return your response ONLY as a valid JSON object with EXACTLY this structure:
             const geminiData: any = await geminiRes.json();
             const rawJsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
             if (rawJsonText) {
-              const parsedAnalysis = JSON.parse(rawJsonText);
+              const cleaned = rawJsonText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+              const parsedAnalysis = JSON.parse(cleaned);
               return res.status(200).json(parsedAnalysis);
             }
+
           }
         } catch (geminiErr) {
           console.warn(`Gemini Vercel analysis notice for ${modelName}:`, geminiErr);
